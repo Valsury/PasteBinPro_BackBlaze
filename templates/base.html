@@ -124,6 +124,21 @@
             color: #94a3b8 !important;
         }
 
+        [data-theme="dark"] .lead {
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] span {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .gradient-text {
+            background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
         [data-theme="dark"] .form-control,
         [data-theme="dark"] .form-select,
         [data-theme="dark"] textarea {
@@ -145,6 +160,12 @@
         [data-theme="dark"] .form-select::placeholder,
         [data-theme="dark"] textarea::placeholder {
             color: #64748b !important;
+        }
+
+        [data-theme="dark"] .form-control option,
+        [data-theme="dark"] .form-select option {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
         }
 
         [data-theme="dark"] .table {
@@ -199,6 +220,101 @@
 
         [data-theme="dark"] a:not(.btn):not(.nav-link):hover {
             color: #c7d2fe !important;
+        }
+
+        /* Специфичные элементы AI страницы */
+        [data-theme="dark"] #ai-status,
+        [data-theme="dark"] #current-model,
+        [data-theme="dark"] #ai-status span,
+        [data-theme="dark"] #current-model span {
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] .text-success {
+            color: #34d399 !important;
+        }
+
+        [data-theme="dark"] .text-danger {
+            color: #f87171 !important;
+        }
+
+        [data-theme="dark"] .text-warning {
+            color: #fbbf24 !important;
+        }
+
+        [data-theme="dark"] .text-info {
+            color: #22d3ee !important;
+        }
+
+        /* Кнопки в темной теме */
+        [data-theme="dark"] .btn-outline-primary {
+            color: #a5b4fc !important;
+            border-color: #818cf8 !important;
+            background: rgba(129, 140, 248, 0.1) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary:hover {
+            background: rgba(129, 140, 248, 0.2) !important;
+            border-color: #a5b4fc !important;
+            color: #c7d2fe !important;
+        }
+
+        /* Статистика и счетчики */
+        [data-theme="dark"] .stat-number,
+        [data-theme="dark"] .stat-label {
+            color: #f1f5f9 !important;
+        }
+
+        /* Иконки */
+        [data-theme="dark"] .fa,
+        [data-theme="dark"] .fas,
+        [data-theme="dark"] .far,
+        [data-theme="dark"] .fab {
+            color: inherit !important;
+        }
+
+        [data-theme="dark"] .text-white {
+            color: #ffffff !important;
+        }
+
+        /* Модальные окна */
+        [data-theme="dark"] .modal-content {
+            background: rgba(30, 41, 59, 0.98) !important;
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .modal-header {
+            border-bottom-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .modal-footer {
+            border-top-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        /* Dropdown меню */
+        [data-theme="dark"] .dropdown-menu {
+            background: rgba(30, 41, 59, 0.98) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .dropdown-item {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .dropdown-item:hover {
+            background: rgba(129, 140, 248, 0.2) !important;
+            color: #f1f5f9 !important;
+        }
+
+        /* Прогресс бары */
+        [data-theme="dark"] .progress {
+            background: rgba(15, 23, 42, 0.6) !important;
+        }
+
+        /* Tooltips */
+        [data-theme="dark"] .tooltip-inner {
+            background: rgba(15, 23, 42, 0.95) !important;
+            color: #f1f5f9 !important;
         }
 
         * {
