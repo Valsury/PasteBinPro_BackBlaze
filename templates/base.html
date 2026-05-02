@@ -834,6 +834,55 @@
             gap: 0.5rem;
         }
 
+        /* КРИТИЧЕСКИ ВАЖНО: Перекрытие всех inline стилей в темной теме */
+        [data-theme="dark"] * {
+            border-color: rgba(71, 85, 105, 0.3) !important;
+        }
+
+        [data-theme="dark"] [style*="color: var(--gray-700)"],
+        [data-theme="dark"] [style*="color: var(--gray-600)"],
+        [data-theme="dark"] [style*="color: var(--gray-800)"] {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .stat-label,
+        [data-theme="dark"] .stat-number {
+            color: #f1f5f9 !important;
+        }
+
+        [data-theme="dark"] .lead {
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] .icon-wrapper {
+            opacity: 0.9;
+        }
+
+        [data-theme="dark"] .badge {
+            background: rgba(129, 140, 248, 0.3) !important;
+            color: #e0e7ff !important;
+        }
+
+        [data-theme="dark"] .alert-info {
+            background: rgba(34, 211, 238, 0.1) !important;
+            border-color: rgba(34, 211, 238, 0.3) !important;
+            color: #e0f2fe !important;
+        }
+
+        [data-theme="dark"] .alert-success {
+            background: rgba(52, 211, 153, 0.1) !important;
+            border-color: rgba(52, 211, 153, 0.3) !important;
+            color: #d1fae5 !important;
+        }
+
+        [data-theme="dark"] .progress {
+            background: rgba(15, 23, 42, 0.8) !important;
+        }
+
+        [data-theme="dark"] .progress-bar {
+            background: var(--gradient-primary) !important;
+        }
+
     </style>
 </head>
 <body>
