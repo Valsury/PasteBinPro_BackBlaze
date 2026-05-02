@@ -1,0 +1,687 @@
+{% extends "base.html" %}
+
+{% block title %}PasteBin Pro - Современная платформа для обмена кодом{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center mb-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="mb-4">
+                <i class="fas fa-rocket gradient-text float" style="font-size: 4rem;"></i>
+            </div>
+            <h1 class="display-2 fw-bold gradient-text text-shadow mb-4">
+                PasteBin Pro
+            </h1>
+            <p class="lead mb-5" style="font-size: 1.25rem; color: var(--gray-700); font-weight: 500;">
+                Современная платформа для быстрого создания, обмена и хранения кода и текста с интегрированным AI-помощником
+            </p>
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="{{ url_for('create_paste') }}" class="btn btn-primary btn-lg hover-lift">
+                    <i class="fas fa-plus"></i>
+                    Создать пасту
+                </a>
+                <a href="{{ url_for('ai_helper_page') }}" class="btn btn-outline-primary btn-lg hover-lift" style="background: rgba(255, 255, 255, 0.15); border-color: var(--primary); color: var(--primary);">
+                    <i class="fas fa-magic"></i>
+                    AI-помощник
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 hover-lift feature-card">
+            <div class="card-body text-center">
+                <div class="feature-icon mb-4">
+                    <div class="icon-wrapper d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px;">
+                        <i class="fas fa-code text-white" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <h5 class="card-title fw-bold mb-3">Быстрое создание</h5>
+                                 <p class="card-text text-muted">
+                     Создавайте пасты за секунды с возможностью указать любую категорию для лучшей организации
+                 </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 hover-lift feature-card">
+            <div class="card-body text-center">
+                <div class="feature-icon mb-4">
+                    <div class="icon-wrapper d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 20px;">
+                        <i class="fas fa-magic text-white" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                                         <h5 class="card-title fw-bold mb-3">AI-помощник</h5>
+                         <p class="card-text text-muted">
+                            Генерация текста, кода и контента с помощью передовых языковых моделей для любых задач
+                         </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 hover-lift feature-card">
+            <div class="card-body text-center">
+                <div class="feature-icon mb-4">
+                    <div class="icon-wrapper d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); border-radius: 20px;">
+                        <i class="fas fa-shield-alt text-white" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <h5 class="card-title fw-bold mb-3">Безопасность</h5>
+                <p class="card-text text-muted">
+                    Приватные пасты, автоматическое удаление по истечении срока и защита персональных данных
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 hover-lift feature-card">
+            <div class="card-body text-center">
+                <div class="feature-icon mb-4">
+                    <div class="icon-wrapper d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 20px;">
+                        <i class="fas fa-mobile-alt text-white" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <h5 class="card-title fw-bold mb-3">Адаптивность</h5>
+                <p class="card-text text-muted">
+                    Современный дизайн, работающий на всех устройствах с оптимизацией для мобильных платформ
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card hover-lift">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-chart-line gradient-text me-3" style="font-size: 1.5rem;"></i>
+                <h3 class="mb-0 gradient-text">Статистика платформы</h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-4">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-item p-4 rounded-4 hover-lift" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);">
+                            <div class="stat-icon mb-3">
+                                <i class="fas fa-file-code gradient-text" style="font-size: 2.5rem;"></i>
+                            </div>
+                                                         <div class="stat-number gradient-text fw-bold" style="font-size: 2.5rem;">
+                                 {{ stats.total_pastes if stats else 0 }}
+                             </div>
+                             <div class="stat-label fw-medium" style="color: var(--gray-700);">Всего паст</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-item p-4 rounded-4 hover-lift" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%);">
+                            <div class="stat-icon mb-3">
+                                <i class="fas fa-clock" style="font-size: 2.5rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                            </div>
+                                                         <div class="stat-number fw-bold" style="font-size: 2.5rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                                 {{ stats.active_pastes if stats else 0 }}
+                             </div>
+                             <div class="stat-label fw-medium" style="color: var(--gray-700);">Активных паст</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-item p-4 rounded-4 hover-lift" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);">
+                            <div class="stat-icon mb-3">
+                                <i class="fas fa-hdd" style="font-size: 2.5rem; background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                            </div>
+                            <div class="stat-number fw-bold" style="font-size: 2.5rem; background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                                1MB
+                            </div>
+                            <div class="stat-label fw-medium" style="color: var(--gray-700);">Максимальный размер</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-item p-4 rounded-4 hover-lift" style="background: linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%);">
+                            <div class="stat-icon mb-3">
+                                <i class="fas fa-clock" style="font-size: 2.5rem; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                            </div>
+                            <div class="stat-number fw-bold" style="font-size: 2.5rem; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                                10м-∞
+                            </div>
+                            <div class="stat-label fw-medium" style="color: var(--gray-700);">Время жизни</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Pastes Section -->
+{% if recent_pastes %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card hover-lift">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-clock gradient-text me-3" style="font-size: 1.5rem;"></i>
+                <h3 class="mb-0 gradient-text">Недавние пасты</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-file-code me-2"></i>Название</th>
+                                                                 <th><i class="fas fa-tags me-2"></i>Категория</th>
+                                <th><i class="fas fa-calendar me-2"></i>Создано</th>
+                                <th><i class="fas fa-clock me-2"></i>Время жизни</th>
+                                <th><i class="fas fa-tools me-2"></i>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paste in recent_pastes[:5] %}
+                            <tr class="paste-row">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-wrapper me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: var(--gradient-primary); border-radius: 10px;">
+                                            <i class="fas fa-file-code text-white"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ paste.title }}</div>
+                                            <small class="text-muted">{{ paste.content[:50] if paste.content else '' }}{% if paste.content and paste.content|length > 50 %}...{% endif %}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-primary">{{ paste.language }}</span>
+                                </td>
+                                                                <td>
+                                    <div class="text-muted">
+                                        <div>{{ paste.created_at.strftime('%d.%m.%Y') if paste.created_at else '' }}</div>
+                                        <small>{{ paste.created_at.strftime('%H:%M') if paste.created_at else '' }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if paste.lifetime == 0 %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-infinity me-1"></i>Бессрочно
+                                        </span>
+                                    {% else %}
+                                        <div class="remaining-time" data-paste-id="{{ paste.id }}" data-expires-at="{{ paste.expires_at.isoformat() if paste.expires_at else '' }}">
+                                            {% if paste.expires_at %}
+                                                <span class="time-display">{{ paste.get_remaining_time_formatted() }}</span>
+                                            {% else %}
+                                                <span class="time-display">Вычисляется...</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('view_paste', paste_id=paste.id) }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button class="btn btn-outline-success" onclick="copyPasteUrl('{{ url_for('view_paste', paste_id=paste.id, _external=True) }}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info" onclick="downloadPaste('{{ paste.content if paste.content else '' }}', '{{ paste.title }}')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        {% if not paste.is_expired %}
+                                        <button class="btn btn-outline-danger delete-paste-btn" 
+                                                data-paste-id="{{ paste.id }}" 
+                                                data-paste-title="{{ paste.title }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if recent_pastes|length > 5 %}
+                <div class="card-body pt-0">
+                    <div class="text-center">
+                        <a href="{{ url_for('recent_pastes') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Посмотреть все пасты
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- How to Use Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card hover-lift">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-question-circle gradient-text me-3" style="font-size: 1.5rem;"></i>
+                <h3 class="mb-0 gradient-text">Как использовать</h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="step-item text-center p-4 rounded-4 h-100 hover-lift" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);">
+                            <div class="step-number gradient-text fw-bold mb-3" style="font-size: 3rem;">1</div>
+                            <h5 class="fw-bold mb-3">Создайте пасту</h5>
+                                                         <p style="color: var(--gray-700); font-weight: 500;">Введите код или текст, укажите категорию и установите время жизни</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="step-item text-center p-4 rounded-4 h-100 hover-lift" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.05) 0%, rgba(245, 87, 108, 0.05) 100%);">
+                            <div class="step-number fw-bold mb-3" style="font-size: 3rem; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">2</div>
+                            <h5 class="fw-bold mb-3">Поделитесь ссылкой</h5>
+                            <p class="text-muted">Получите уникальную ссылку для доступа к пасте и поделитесь с коллегами</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="step-item text-center p-4 rounded-4 h-100 hover-lift" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);">
+                            <div class="step-number fw-bold mb-3" style="font-size: 3rem; background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">3</div>
+                            <h5 class="fw-bold mb-3">Используйте AI</h5>
+                                                         <p class="text-muted">Генерируйте текст, код и контент в любых категориях с помощью мощного AI-помощника</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card text-center hover-lift" style="background: var(--gradient-primary); color: white; border: none;">
+            <div class="card-body py-5">
+                <i class="fas fa-rocket mb-4" style="font-size: 4rem; opacity: 0.9;"></i>
+                <h2 class="fw-bold mb-4" style="color: white;">Готовы начать?</h2>
+                                 <p class="lead mb-4" style="color: rgba(255, 255, 255, 0.95); font-weight: 500;">
+                     Присоединяйтесь к тысячам пользователей, которые уже используют PasteBin Pro для обмена кодом и текстом
+                 </p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{{ url_for('create_paste') }}" class="btn btn-lg" style="background: rgba(255, 255, 255, 0.25); border: 2px solid rgba(255, 255, 255, 0.4); color: white; backdrop-filter: blur(10px); font-weight: 600;">
+                        <i class="fas fa-rocket me-2"></i>Создать первую пасту
+                    </a>
+                    <a href="{{ url_for('ai_helper_page') }}" class="btn btn-lg" style="background: white; color: var(--primary); font-weight: 600;">
+                        <i class="fas fa-magic me-2"></i>Попробовать AI
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Копирование ссылки на пасту
+function copyPasteUrl(url) {
+    navigator.clipboard.writeText(url).then(function() {
+        showToast('Ссылка скопирована в буфер обмена!', 'success');
+    }, function() {
+        showToast('Не удалось скопировать ссылку', 'danger');
+    });
+}
+
+// Скачивание пасты
+function downloadPaste(content, title) {
+    if (!content) {
+        showToast('Содержимое пасты недоступно для скачивания', 'error');
+        return;
+    }
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    showToast('Паста скачана!', 'success');
+}
+
+// Анимации при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем стаггер-анимацию для карточек функций
+    document.querySelectorAll('.feature-card').forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.2}s`;
+        card.classList.add('slide-up');
+    });
+    
+    // Анимация для статистики
+    document.querySelectorAll('.stat-item').forEach((item, index) => {
+        item.style.animationDelay = `${0.8 + index * 0.1}s`;
+        item.classList.add('slide-up');
+    });
+    
+    // Анимация для шагов
+    document.querySelectorAll('.step-item').forEach((item, index) => {
+        item.style.animationDelay = `${1.2 + index * 0.2}s`;
+        item.classList.add('slide-up');
+    });
+    
+    // Добавляем обработчики для кнопок удаления
+    document.querySelectorAll('.delete-paste-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pasteId = this.getAttribute('data-paste-id');
+            const pasteTitle = this.getAttribute('data-paste-title');
+            deletePaste(pasteId, pasteTitle);
+        });
+    });
+});
+
+// Удаление пасты
+function deletePaste(pasteId, pasteTitle) {
+    if (confirm(`Вы уверены, что хотите удалить пасту "${pasteTitle}"? Это действие нельзя отменить.`)) {
+        // Находим кнопку удаления и показываем индикатор загрузки
+        const deleteBtn = document.querySelector(`[data-paste-id="${pasteId}"]`);
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        deleteBtn.disabled = true;
+        
+        // Отправляем запрос на удаление
+        fetch(`/paste/${pasteId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Паста успешно удалена!', 'success');
+                // Удаляем строку из таблицы
+                const row = deleteBtn.closest('tr');
+                row.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    row.remove();
+                    // Обновляем счетчики
+                    updateCounters();
+                }, 500);
+            } else {
+                showToast(data.error || 'Ошибка при удалении пасты', 'error');
+                // Восстанавливаем кнопку
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showToast('Произошла ошибка при удалении пасты', 'error');
+            // Восстанавливаем кнопку
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        });
+    }
+}
+
+// Обновление счетчиков после удаления
+function updateCounters() {
+    const rows = document.querySelectorAll('tbody tr');
+    const totalPastes = rows.length;
+    
+    // Если паст не осталось, показываем сообщение
+    if (totalPastes === 0) {
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <h5>Пасты не найдены</h5>
+                        <p>Создайте первую пасту, чтобы начать работу!</p>
+                        <a href="{{ url_for('create_paste') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Создать пасту
+                        </a>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+</script>
+
+<style>
+/* Дополнительные стили для главной страницы */
+.hero-section {
+    padding: 4rem 0;
+    margin-bottom: 4rem;
+}
+
+/* Улучшенная контрастность для текста */
+.hero-section .lead {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.text-muted {
+    color: var(--gray-600) !important;
+    font-weight: 500;
+}
+
+.card-text.text-muted {
+    color: var(--gray-700) !important;
+    line-height: 1.6;
+}
+
+.feature-card {
+    border: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-card:hover {
+    transform: translateY(-12px) scale(1.02);
+}
+
+.feature-card .icon-wrapper {
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover .icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.stat-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.stat-item:hover {
+    transform: translateY(-8px);
+}
+
+.step-item {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.step-item:hover {
+    border-color: rgba(99, 102, 241, 0.2);
+    transform: translateY(-8px);
+}
+
+.paste-row {
+    transition: all 0.3s ease;
+}
+
+.paste-row:hover {
+    background: rgba(99, 102, 241, 0.05);
+    transform: scale(1.01);
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+}
+
+/* Респонсивность */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 2rem 0;
+    }
+    
+    .hero-section h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero-section .lead {
+        font-size: 1.1rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem !important;
+    }
+    
+    .step-number {
+        font-size: 2.5rem !important;
+    }
+}
+
+/* Стили для таймеров */
+.time-display {
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.time-display.text-danger {
+    animation: pulse 1s infinite;
+}
+
+.time-display.text-warning {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+</style>
+
+<script>
+// Функция для форматирования оставшегося времени
+function formatRemainingTime(minutes) {
+    if (minutes <= 0) {
+        return "Истекла";
+    }
+    
+    // Конвертируем в секунды для более точного расчета
+    const totalSeconds = Math.floor(minutes * 60);
+    
+    if (totalSeconds < 60) {
+        // Меньше минуты - показываем в секундах
+        return `${totalSeconds}с`;
+    } else if (totalSeconds < 3600) {
+        // Меньше часа - показываем в минутах и секундах
+        const mins = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        if (seconds === 0) {
+            return `${mins}м`;
+        } else {
+            return `${mins}м ${seconds}с`;
+        }
+    } else if (totalSeconds < 86400) {
+        // Меньше дня - показываем в часах, минутах и секундах
+        const hours = Math.floor(totalSeconds / 3600);
+        const remainingSeconds = totalSeconds % 3600;
+        const mins = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        
+        if (mins === 0 && seconds === 0) {
+            return `${hours}ч`;
+        } else if (seconds === 0) {
+            return `${hours}ч ${mins}м`;
+        } else {
+            return `${hours}ч ${mins}м ${seconds}с`;
+        }
+    } else {
+        // Больше дня - показываем в днях, часах, минутах
+        const days = Math.floor(totalSeconds / 86400);
+        const remainingSeconds = totalSeconds % 86400;
+        const hours = Math.floor(remainingSeconds / 3600);
+        const mins = Math.floor((remainingSeconds % 3600) / 60);
+        
+        if (hours === 0 && mins === 0) {
+            return `${days}д`;
+        } else if (mins === 0) {
+            return `${days}д ${hours}ч`;
+        } else {
+            return `${days}д ${hours}ч ${mins}м`;
+        }
+    }
+}
+
+// Функция для обновления таймеров
+function updateTimers() {
+    const now = new Date();
+    
+    document.querySelectorAll('.remaining-time').forEach(timeElement => {
+        const pasteId = timeElement.getAttribute('data-paste-id');
+        const expiresAt = timeElement.getAttribute('data-expires-at');
+        
+        if (!expiresAt) return;
+        
+        const expiresDate = new Date(expiresAt);
+        const remainingMs = expiresDate.getTime() - now.getTime();
+        const remainingSeconds = Math.floor(remainingMs / 1000);
+        const remainingMinutes = remainingSeconds / 60; // Сохраняем дробную часть
+        
+        const timeDisplay = timeElement.querySelector('.time-display');
+        
+        if (remainingSeconds <= 0) {
+            // Паста истекла - проверяем, не обновляли ли уже
+            if (timeDisplay.textContent !== "Истекла") {
+                timeDisplay.textContent = "Истекла";
+                timeDisplay.className = "time-display text-danger";
+                
+                // Обновляем статус на "Истекла"
+                const statusCell = timeElement.closest('tr').querySelector('.badge');
+                if (statusCell) {
+                    if (statusCell.classList.contains('bg-success')) {
+                        statusCell.className = 'badge bg-danger';
+                        statusCell.innerHTML = '<i class="fas fa-times-circle me-1"></i>Истекла';
+                    } else if (statusCell.classList.contains('bg-warning')) {
+                        statusCell.className = 'badge bg-danger';
+                        statusCell.innerHTML = '<i class="fas fa-times-circle me-1"></i>Истекла';
+                    }
+                }
+            }
+        } else {
+            // Паста активна
+            const formattedTime = formatRemainingTime(remainingMinutes);
+            timeDisplay.textContent = formattedTime;
+            
+            // Добавляем цветовую индикацию в зависимости от оставшегося времени
+            if (remainingMinutes <= 0.5) { // 30 секунд
+                timeDisplay.className = "time-display text-danger";
+            } else if (remainingMinutes <= 2) { // 2 минуты
+                timeDisplay.className = "time-display text-warning";
+            } else {
+                timeDisplay.className = "time-display text-success";
+            }
+        }
+    });
+}
+
+// Автоматическое обновление таймеров каждую секунду для точного отображения секунд
+setInterval(() => {
+    updateTimers();
+}, 1000);
+
+// Обновляем таймеры сразу при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    updateTimers();
+});
+</script>
+{% endblock %}

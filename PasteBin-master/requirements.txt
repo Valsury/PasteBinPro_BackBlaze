@@ -1,0 +1,9 @@
+Flask==2.3.3
+python-dotenv==1.0.0
+requests==2.31.0
+psycopg2-binary==2.9.7
+minio==7.1.17
+SQLAlchemy==2.0.21
+Flask-SQLAlchemy==3.0.5
+alembic==1.12.0
+gunicorn==21.2.0

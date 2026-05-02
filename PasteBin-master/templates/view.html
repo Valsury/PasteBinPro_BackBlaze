@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}{{ paste.title }} - PasteBin Pro{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+{% if paste.is_private %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-warning" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-lock me-2"></i>
+                <div>
+                    <strong>Приватная паста</strong>
+                    <br>
+                    <small>Эта паста скрыта из всех публичных списков, поиска и статистики. Доступна только по прямой ссылке.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap">
+                    <div class="flex-grow-1">
+                        <h1 class="h2 mb-2">
+                            <i class="fas fa-file-code me-2 text-primary"></i>
+                            {{ paste.title }}
+                        </h1>
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <span class="badge badge-primary fs-6">
+                                <i class="fas fa-code me-1"></i>{{ paste.language }}
+                            </span>
+                            {% if paste.is_private %}
+                                <span class="badge badge-danger fs-6">
+                                    <i class="fas fa-lock me-1"></i>Приватная
+                                </span>
+                            {% endif %}
+                            {% if paste.is_expired %}
+                                <span class="badge badge-danger fs-6">
+                                    <i class="fas fa-clock me-1"></i>Истекла
+                                </span>
+                            {% else %}
+                                <span class="badge badge-success fs-6">
+                                    <i class="fas fa-check-circle me-1"></i>Активна
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ url_for('create_paste') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Новая паста
+                        </a>
+                        <a href="{{ url_for('recent_pastes') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-1"></i>Все пасты
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-code me-2"></i>Содержимое пасты
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                {% if paste.language and paste.language != 'text' %}
+                    <pre class="mb-0"><code class="language-{{ paste.language }}">{{ content }}</code></pre>
+                {% else %}
+                    <div class="p-4">
+                        <div class="text-content">{{ content|nl2br|safe }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Metadata Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Информация о пасте
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt text-info me-2"></i>
+                            <div>
+                                <h6 class="mb-1">Дата создания</h6>
+                                <p class="mb-0 text-muted">{{ paste.created_at.strftime('%d.%m.%Y %H:%M') if paste.created_at else '' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-clock text-warning me-2"></i>
+                            <div>
+                                <h6 class="mb-1">Время жизни</h6>
+                                {% if paste.lifetime == 0 %}
+                                    <p class="mb-0 text-success">Бессрочно</p>
+                                {% else %}
+                                    <p class="mb-0 text-muted">{{ paste.lifetime }} минут</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if paste.is_private %}
+                    <div class="col-12 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-lock text-danger me-2"></i>
+                            <div>
+                                <h6 class="mb-1">Приватность</h6>
+                                <p class="mb-0 text-danger">
+                                    <strong>Приватная паста</strong> - скрыта из всех публичных списков и поиска
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Статистика
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="stat-number gradient-text fw-bold h3">{{ content|length }}</div>
+                            <div class="stat-label text-muted">Символов</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="stat-number gradient-text fw-bold h3">{{ content.split('\n')|length }}</div>
+                            <div class="stat-label text-muted">Строк</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>Действия
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="copyContent()">
+                        <i class="fas fa-copy me-2"></i>Копировать содержимое
+                    </button>
+                    <button class="btn btn-outline-success" onclick="copyUrl()">
+                        <i class="fas fa-link me-2"></i>Копировать ссылку
+                    </button>
+                    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#downloadModal">
+                        <i class="fas fa-download me-2"></i>Скачать пасту
+                    </button>
+                    {% if not paste.is_expired %}
+                    <button class="btn btn-outline-danger" onclick="deletePaste()">
+                        <i class="fas fa-trash me-2"></i>Удалить пасту
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-share-alt me-2"></i>Поделиться
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="shareOnTelegram()">
+                        <i class="fab fa-telegram me-2"></i>Telegram
+                    </button>
+                    <button class="btn btn-outline-success" onclick="shareOnWhatsApp()">
+                        <i class="fab fa-whatsapp me-2"></i>WhatsApp
+                    </button>
+                    <div class="text-center mt-3">
+                        <div id="qrcode-container" class="d-inline-block">
+                            <div id="qrcode-loading" class="text-center">
+                                <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                                <p class="text-muted small mt-2">Генерация QR-кода...</p>
+                            </div>
+                            <div id="qrcode" class="d-none"></div>
+                        </div>
+                        <p class="text-muted small mt-2">QR-код для мобильных устройств</p>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="refreshQRCode()">
+                            <i class="fas fa-sync-alt me-1"></i>Обновить QR-код
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download Modal -->
+<div class="modal fade" id="downloadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="card-header">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-download me-2"></i>Выберите формат для скачивания
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="downloadContent('txt')">
+                        <i class="fas fa-file-alt me-2"></i>Текстовый файл (.txt)
+                    </button>
+                    {% if paste.language and paste.language != 'text' %}
+                    <button class="btn btn-outline-success" onclick="downloadContent('{{ paste.language }}')">
+                        <i class="fas fa-code me-2"></i>{{ paste.language|upper }} файл (.{{ paste.language }})
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-outline-info" onclick="downloadContent('md')">
+                        <i class="fas fa-file-markdown me-2"></i>Markdown (.md)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Генерируем QR-код через серверный API
+    generateQRCode();
+    
+    // Подсветка синтаксиса
+    if (window.Prism) {
+        Prism.highlightAll();
+    }
+    
+    // Автоматическое копирование секретной ссылки для приватных паст
+    {% if paste.is_private %}
+    setTimeout(function() {
+        copySecretLinkToClipboard();
+    }, 1000); // Копируем через 1 секунду после загрузки
+    {% endif %}
+});
+
+function generateQRCode() {
+    const loadingDiv = document.getElementById('qrcode-loading');
+    const qrDiv = document.getElementById('qrcode');
+    
+    // Показываем индикатор загрузки
+    loadingDiv.classList.remove('d-none');
+    qrDiv.classList.add('d-none');
+    
+    // Определяем URL для API в зависимости от типа пасты
+    {% if paste.is_private %}
+    const apiUrl = `/secret/{{ paste.secret_key }}/qr`;
+    {% else %}
+    const apiUrl = `/paste/{{ paste.id }}/qr`;
+    {% endif %}
+    
+    // Запрашиваем QR-код с сервера
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Создаем изображение QR-кода
+                const img = document.createElement('img');
+                img.src = data.qr_code;
+                img.alt = 'QR-код для пасты';
+                img.style.width = '120px';
+                img.style.height = '120px';
+                img.style.border = '1px solid #dee2e6';
+                img.style.borderRadius = '8px';
+                
+                // Очищаем контейнер и добавляем изображение
+                qrDiv.innerHTML = '';
+                qrDiv.appendChild(img);
+                
+                // Показываем QR-код и скрываем загрузку
+                loadingDiv.classList.add('d-none');
+                qrDiv.classList.remove('d-none');
+            } else {
+                // Показываем ошибку
+                qrDiv.innerHTML = `
+                    <div class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <p class="small mt-2">Ошибка генерации QR-кода</p>
+                        <p class="small text-muted">${data.error || 'Неизвестная ошибка'}</p>
+                    </div>
+                `;
+                loadingDiv.classList.add('d-none');
+                qrDiv.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке QR-кода:', error);
+            qrDiv.innerHTML = `
+                <div class="text-center text-danger">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    <p class="small mt-2">Ошибка загрузки QR-кода</p>
+                    <p class="small text-muted">Проверьте подключение к интернету</p>
+                </div>
+            `;
+            loadingDiv.classList.add('d-none');
+            qrDiv.classList.remove('d-none');
+        });
+}
+
+function refreshQRCode() {
+    generateQRCode();
+}
+
+function copyContent() {
+    const content = `{{ content|replace('\n', '\\n')|replace('"', '\\"') }}`;
+    navigator.clipboard.writeText(content).then(function() {
+        showToast('Содержимое скопировано в буфер обмена!', 'success');
+    }, function() {
+        showToast('Не удалось скопировать содержимое', 'error');
+    });
+}
+
+function copyUrl() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(function() {
+        showToast('Ссылка скопирована в буфер обмена!', 'success');
+    }, function() {
+        showToast('Не удалось скопировать ссылку', 'error');
+    });
+}
+
+function downloadContent(format) {
+    const content = `{{ content|replace('\n', '\\n')|replace('"', '\\"') }}`;
+    let filename = '{{ paste.title|replace(" ", "_") }}';
+    let mimeType = 'text/plain';
+    
+    switch(format) {
+        case 'txt':
+            filename += '.txt';
+            break;
+        case 'md':
+            filename += '.md';
+            mimeType = 'text/markdown';
+            break;
+        default:
+            filename += '.' + format;
+            break;
+    }
+    
+    downloadAsFile(content, filename, mimeType);
+    showToast('Файл скачивается...', 'success');
+    
+    // Закрываем модальное окно
+    const modal = bootstrap.Modal.getInstance(document.getElementById('downloadModal'));
+    modal.hide();
+}
+
+function downloadAsFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function shareOnTelegram() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent('Посмотрите на эту пасту: {{ paste.title }}');
+    window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+}
+
+function shareOnWhatsApp() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent('Посмотрите на эту пасту: {{ paste.title }}');
+    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+}
+
+function deletePaste() {
+    if (confirm('Вы уверены, что хотите удалить эту пасту? Это действие нельзя отменить.')) {
+        {% if paste.is_private %}
+        // Для приватных паст используем секретный маршрут
+        const secretKey = '{{ paste.secret_key }}';
+        const deleteUrl = `/secret/${secretKey}/delete`;
+        {% else %}
+        // Для публичных паст используем обычный маршрут
+        const pasteId = {{ paste.id }};
+        const deleteUrl = `/paste/${pasteId}/delete`;
+        {% endif %}
+        
+        // Показываем индикатор загрузки
+        const deleteBtn = event.target.closest('button');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Удаление...';
+        deleteBtn.disabled = true;
+        
+        // Отправляем запрос на удаление
+        fetch(deleteUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Паста успешно удалена!', 'success');
+                // Перенаправляем на главную страницу через 1 секунду
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                showToast(data.error || 'Ошибка при удалении пасты', 'error');
+                // Восстанавливаем кнопку
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showToast('Произошла ошибка при удалении пасты', 'error');
+            // Восстанавливаем кнопку
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        });
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Функция для копирования секретной ссылки в буфер обмена
+function copySecretLinkToClipboard() {
+    const currentUrl = window.location.href;
+    
+    navigator.clipboard.writeText(currentUrl).then(function() {
+        showToast('Секретная ссылка автоматически скопирована в буфер обмена!', 'success');
+    }, function() {
+        showToast('Не удалось автоматически скопировать секретную ссылку', 'error');
+    });
+}
+</script>
+{% endblock %}

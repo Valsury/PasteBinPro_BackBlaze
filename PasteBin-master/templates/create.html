@@ -1,0 +1,1240 @@
+{% extends "base.html" %}
+
+{% block title %}Создать пасту - PasteBin Pro{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Заголовок -->
+        <div class="text-center mb-5 fade-in">
+            <div class="mb-4">
+                <i class="fas fa-plus-circle gradient-text" style="font-size: 4rem;"></i>
+            </div>
+            <h1 class="display-4 fw-bold gradient-text mb-3">Создать новую пасту</h1>
+            <p class="lead text-muted">
+                Поделитесь своим кодом или текстом с миром. Укажите категорию для лучшей организации и поиска.
+            </p>
+        </div>
+
+        <!-- Основная форма -->
+        <div class="card hover-lift slide-up">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-edit gradient-text me-3" style="font-size: 1.5rem;"></i>
+                <h3 class="mb-0 gradient-text">Новая паста</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_paste') }}">
+                    <!-- Название -->
+                    <div class="mb-4">
+                        <label for="title" class="form-label d-flex align-items-center">
+                            <i class="fas fa-heading me-2 text-primary"></i>
+                            <span class="fw-semibold">Название пасты</span>
+                            <span class="text-danger ms-1">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               id="title" 
+                               name="title" 
+                               placeholder="Введите название вашей пасты..." 
+                               required 
+                               maxlength="200">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Краткое и понятное название поможет другим найти вашу пасту
+                        </div>
+                    </div>
+
+                    <!-- Настройки -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="language" class="form-label d-flex align-items-center">
+                                <i class="fas fa-tags me-2 text-success"></i>
+                                <span class="fw-semibold">Категория</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="language" 
+                                   name="language" 
+                                   placeholder="Например: Python, JavaScript, Текст..." 
+                                   value="text"
+                                   maxlength="50">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Укажите категорию для лучшей организации
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lifetime" class="form-label d-flex align-items-center">
+                                <i class="fas fa-clock me-2 text-warning"></i>
+                                <span class="fw-semibold">Время жизни</span>
+                            </label>
+                            
+                            <!-- Ползунок времени жизни -->
+                            <div class="lifetime-slider-container">
+                                <div class="lifetime-slider-wrapper">
+                                    <input type="range" 
+                                           class="form-range lifetime-slider" 
+                                           id="lifetime-slider" 
+                                           min="0" 
+                                           max="12" 
+                                           value="3" 
+                                           step="1">
+                                    
+                                    <!-- Предустановленные значения -->
+                                    <div class="lifetime-markers">
+                                        <span class="marker" data-value="0" title="Бессрочно">∞</span>
+                                        <span class="marker" data-value="1" title="1 секунда">1с</span>
+                                        <span class="marker" data-value="2" title="10 секунд">10с</span>
+                                        <span class="marker" data-value="3" title="30 секунд">30с</span>
+                                        <span class="marker" data-value="4" title="1 минута">1м</span>
+                                        <span class="marker" data-value="5" title="30 минут">30м</span>
+                                        <span class="marker" data-value="6" title="1 час">1ч</span>
+                                        <span class="marker" data-value="7" title="6 часов">6ч</span>
+                                        <span class="marker" data-value="8" title="12 часов">12ч</span>
+                                        <span class="marker" data-value="9" title="1 день">1д</span>
+                                        <span class="marker" data-value="10" title="1 неделя">1н</span>
+                                        <span class="marker" data-value="11" title="1 месяц">1м</span>
+                                        <span class="marker" data-value="12" title="1 год">1г</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Отображение выбранного времени -->
+                                <div class="lifetime-display mt-2">
+                                    <span class="badge bg-primary fs-6" id="lifetime-display">
+                                        <i class="fas fa-clock me-1"></i>30 секунд
+                                    </span>
+                                </div>
+                                
+                                <!-- Настраиваемое время -->
+                                <div class="custom-lifetime mt-2">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-edit"></i>
+                                        </span>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="custom-lifetime" 
+                                               placeholder="Настраиваемое время"
+                                               min="0.0167" 
+                                               step="0.0167">
+                                        <select class="form-select" id="custom-time-unit" style="max-width: 100px;">
+                                            <option value="seconds">секунд</option>
+                                            <option value="minutes" selected>минут</option>
+                                            <option value="hours">часов</option>
+                                            <option value="days">дней</option>
+                                            <option value="weeks">недель</option>
+                                            <option value="months">месяцев</option>
+                                            <option value="years">лет</option>
+                                        </select>
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary" 
+                                                id="apply-custom-lifetime">
+                                            Применить
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Скрытое поле для формы -->
+                                <input type="hidden" id="lifetime" name="lifetime" value="0.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Приватность -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_private" name="is_private" style="transform: scale(1.2);">
+                            <label class="form-check-label fw-semibold" for="is_private">
+                                <i class="fas fa-lock me-2 text-danger"></i>
+                                Приватная паста
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Приватные пасты не отображаются в публичных списках и доступны только по секретной ссылке
+                        </div>
+                        <div class="alert alert-info mt-2" id="private-info" style="display: none;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Приватная паста:</strong> Будет скрыта из всех публичных списков, поиска и статистики
+                        </div>
+                        <div class="alert alert-success mt-2" id="secret-link-info" style="display: none;">
+                            <i class="fas fa-link me-2"></i>
+                            <strong>Секретная ссылка:</strong> <span id="secret-link-text"></span>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="copySecretLink()">
+                                <i class="fas fa-copy me-1"></i>Копировать
+                            </button>
+                        </div>
+                        <!-- Скрытое поле для секретного ключа -->
+                        <input type="hidden" id="secret-key-input" name="secret_key" value="">
+                    </div>
+
+                    <!-- Контент -->
+                    <div class="mb-4">
+                        <label for="content" class="form-label d-flex align-items-center">
+                            <i class="fas fa-file-code me-2 text-info"></i>
+                            <span class="fw-semibold">Содержимое</span>
+                            <span class="text-danger ms-1">*</span>
+                        </label>
+                        <div class="position-relative">
+                            <textarea class="form-control" 
+                                      id="content" 
+                                      name="content" 
+                                      rows="15" 
+                                      placeholder="Вставьте ваш код или текст здесь..." 
+                                      required 
+                                      style="font-family: 'Fira Code', 'Consolas', monospace; font-size: 14px; line-height: 1.5;"></textarea>
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearContent()">
+                                    <i class="fas fa-trash me-1"></i>Очистить
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-text d-flex justify-content-between">
+                            <span>
+                                <i class="fas fa-keyboard me-1"></i>
+                                Укажите категорию для лучшей организации и поиска
+                            </span>
+                            <span id="char-count" class="text-muted">0 символов</span>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button type="submit" class="btn btn-primary btn-lg hover-lift">
+                            <i class="fas fa-save me-2"></i>
+                            Создать пасту
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-lg hover-lift">
+                            <i class="fas fa-undo me-2"></i>
+                            Сбросить
+                        </button>
+                        <a href="{{ url_for('ai_helper_page') }}" class="btn btn-outline-primary btn-lg hover-lift">
+                            <i class="fas fa-magic me-2"></i>
+                            AI-помощник
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Дополнительные возможности -->
+        <div class="row g-4 mt-4">
+            <div class="col-md-4">
+                <div class="card h-100 hover-lift" style="border: 2px solid rgba(99, 102, 241, 0.1);">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-magic gradient-text" style="font-size: 2rem;"></i>
+                        </div>
+                                                 <h5 class="card-title">AI-генерация</h5>
+                         <p class="card-text text-muted small">
+                             Используйте AI для генерации кода, текста и контента в любых категориях
+                         </p>
+                        <a href="{{ url_for('ai_helper_page') }}" class="btn btn-sm btn-outline-primary">
+                            Попробовать AI
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 hover-lift" style="border: 2px solid rgba(16, 185, 129, 0.1);">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--success);"></i>
+                        </div>
+                        <h5 class="card-title">Безопасность</h5>
+                        <p class="card-text text-muted small">
+                            Ваши данные защищены. Автоматическое удаление по истечении срока
+                        </p>
+                        <span class="badge badge-success">Защищено</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 hover-lift" style="border: 2px solid rgba(6, 182, 212, 0.1);">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-share-alt" style="font-size: 2rem; color: var(--accent);"></i>
+                        </div>
+                        <h5 class="card-title">Легкий доступ</h5>
+                        <p class="card-text text-muted small">
+                            Получите уникальную ссылку для быстрого доступа и обмена
+                        </p>
+                        <span class="badge" style="background: var(--accent); color: white;">Удобно</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Подсказки -->
+        <div class="card mt-4 hover-lift" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border: 2px solid rgba(99, 102, 241, 0.1);">
+            <div class="card-body">
+                <h5 class="card-title d-flex align-items-center">
+                    <i class="fas fa-lightbulb gradient-text me-2"></i>
+                    Полезные советы
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Выбирайте правильный язык</strong> для подсветки синтаксиса
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Используйте описательные названия</strong> для ваших паст
+                            </li>
+                            <li class="mb-0">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Проверьте код</strong> перед публикацией
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                <strong>Приватные пасты</strong> не индексируются поисковиками
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                <strong>Бессрочные пасты</strong> хранятся неограниченное время
+                            </li>
+                            <li class="mb-0">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                <strong>Максимальный размер</strong> пасты - 1MB
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Подсчет символов
+document.addEventListener('DOMContentLoaded', function() {
+    const contentTextarea = document.getElementById('content');
+    const charCount = document.getElementById('char-count');
+    
+    function updateCharCount() {
+        const count = contentTextarea.value.length;
+        charCount.textContent = `${count.toLocaleString()} символов`;
+        
+        // Меняем цвет при приближении к лимиту
+        if (count > 900000) {
+            charCount.className = 'text-danger fw-bold';
+        } else if (count > 700000) {
+            charCount.className = 'text-warning fw-bold';
+        } else {
+            charCount.className = 'text-muted';
+        }
+    }
+    
+    contentTextarea.addEventListener('input', updateCharCount);
+    updateCharCount(); // Инициализация
+});
+
+// Очистка содержимого
+function clearContent() {
+    if (confirm('Вы уверены, что хотите очистить содержимое?')) {
+        document.getElementById('content').value = '';
+        document.getElementById('char-count').textContent = '0 символов';
+        document.getElementById('char-count').className = 'text-muted';
+    }
+}
+
+// Автосохранение в localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    // Восстановление данных при загрузке
+    inputs.forEach(input => {
+        const savedValue = localStorage.getItem(`paste_${input.name}`);
+        if (savedValue && input.type !== 'checkbox') {
+            input.value = savedValue;
+        } else if (savedValue && input.type === 'checkbox') {
+            input.checked = savedValue === 'true';
+        }
+    });
+    
+    // Сохранение при изменении
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.type === 'checkbox') {
+                localStorage.setItem(`paste_${this.name}`, this.checked);
+            } else {
+                localStorage.setItem(`paste_${this.name}`, this.value);
+            }
+        });
+    });
+    
+    // Очистка после успешной отправки
+    form.addEventListener('submit', function() {
+        setTimeout(() => {
+            inputs.forEach(input => {
+                localStorage.removeItem(`paste_${input.name}`);
+            });
+        }, 1000);
+    });
+});
+
+// Горячие клавиши
+document.addEventListener('keydown', function(e) {
+    // Ctrl+Enter для отправки формы
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        document.querySelector('form').submit();
+    }
+    
+    // Ctrl+/ для очистки
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        clearContent();
+    }
+});
+
+// Drag & Drop для файлов
+document.addEventListener('DOMContentLoaded', function() {
+    const contentTextarea = document.getElementById('content');
+    const dropZone = contentTextarea.parentElement;
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        dropZone.style.background = 'rgba(99, 102, 241, 0.1)';
+        dropZone.style.border = '2px dashed var(--primary)';
+    }
+    
+    function unhighlight() {
+        dropZone.style.background = '';
+        dropZone.style.border = '';
+    }
+    
+    dropZone.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.size > 1048576) { // 1MB
+                showToast('Файл слишком большой. Максимальный размер: 1MB', 'danger');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                contentTextarea.value = event.target.result;
+                document.getElementById('char-count').textContent = `${event.target.result.length.toLocaleString()} символов`;
+                
+                // Автоопределение языка по расширению
+                const extension = file.name.split('.').pop().toLowerCase();
+                const languageMap = {
+                    'py': 'python',
+                    'js': 'javascript',
+                    'java': 'java',
+                    'cpp': 'cpp',
+                    'c': 'cpp',
+                    'cs': 'csharp',
+                    'php': 'php',
+                    'rb': 'ruby',
+                    'go': 'go',
+                    'rs': 'rust',
+                    'swift': 'swift',
+                    'kt': 'kotlin',
+                    'ts': 'typescript',
+                    'html': 'html',
+                    'css': 'css',
+                    'scss': 'scss',
+                    'sql': 'sql',
+                    'json': 'json',
+                    'xml': 'xml',
+                    'yml': 'yaml',
+                    'yaml': 'yaml',
+                    'md': 'markdown',
+                    'sh': 'bash',
+                    'ps1': 'powershell'
+                };
+                
+                if (languageMap[extension]) {
+                    document.getElementById('language').value = languageMap[extension];
+                }
+                
+                if (!document.getElementById('title').value) {
+                    document.getElementById('title').value = file.name;
+                }
+                
+                showToast('Файл успешно загружен!', 'success');
+            };
+            reader.readAsText(file);
+        }
+    }
+});
+
+// Анимации при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    // Стаггер-анимация для дополнительных карточек
+    document.querySelectorAll('.row .card').forEach((card, index) => {
+        card.style.animationDelay = `${0.6 + index * 0.1}s`;
+        card.classList.add('slide-up');
+    });
+});
+
+// Ползунок времени жизни
+document.addEventListener('DOMContentLoaded', function() {
+    const slider = document.getElementById('lifetime-slider');
+    const display = document.getElementById('lifetime-display');
+    const hiddenInput = document.getElementById('lifetime');
+    const customInput = document.getElementById('custom-lifetime');
+    const applyCustomBtn = document.getElementById('apply-custom-lifetime');
+    
+    // Массив предустановленных значений в минутах
+    const lifetimeValues = [
+        0,      // Бессрочно
+        0.0167, // 1 секунда (1/60 минуты)
+        0.167,  // 10 секунд (1/6 минуты)
+        0.5,    // 30 секунд (1/2 минуты)
+        1,      // 1 минута
+        30,     // 30 минут
+        60,     // 1 час
+        360,    // 6 часов
+        720,    // 12 часов
+        1440,   // 1 день
+        10080,  // 1 неделя
+        43200,  // 1 месяц
+        525600  // 1 год
+    ];
+    
+    // Функция конвертации времени в минуты
+    function convertToMinutes(value, unit) {
+        switch(unit) {
+            case 'seconds':
+                return value / 60;
+            case 'minutes':
+                return value;
+            case 'hours':
+                return value * 60;
+            case 'days':
+                return value * 1440;
+            case 'weeks':
+                return value * 10080;
+            case 'months':
+                return value * 43200;
+            case 'years':
+                return value * 525600;
+            default:
+                return value;
+        }
+    }
+    
+    // Функция форматирования времени для отображения
+    function formatCustomTime(minutes) {
+        if (minutes < 1) {
+            const seconds = Math.round(minutes * 60);
+            return `${seconds}с`;
+        } else if (minutes < 60) {
+            const mins = Math.round(minutes);
+            const secs = Math.round((minutes - mins) * 60);
+            if (secs === 0) {
+                return `${mins}м`;
+            } else {
+                return `${mins}м ${secs}с`;
+            }
+        } else if (minutes < 1440) {
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = Math.round(minutes % 60);
+            if (remainingMinutes === 0) {
+                return `${hours}ч`;
+            } else {
+                return `${hours}ч ${remainingMinutes}м`;
+            }
+        } else if (minutes < 10080) {
+            const days = Math.floor(minutes / 1440);
+            const remainingMinutes = minutes % 1440;
+            const remainingHours = Math.floor(remainingMinutes / 60);
+            const mins = Math.floor(remainingMinutes % 60);
+            
+            if (remainingHours === 0 && mins === 0) {
+                return `${days}д`;
+            } else if (mins === 0) {
+                return `${days}д ${remainingHours}ч`;
+            } else {
+                return `${days}д ${remainingHours}ч ${mins}м`;
+            }
+        } else if (minutes < 43200) {
+            const weeks = Math.floor(minutes / 10080);
+            const remainingDays = Math.round((minutes % 10080) / 1440);
+            if (remainingDays === 0) {
+                return `${weeks}н`;
+            } else {
+                return `${weeks}н ${remainingDays}д`;
+            }
+        } else if (minutes < 525600) {
+            const months = Math.floor(minutes / 43200);
+            const remainingWeeks = Math.round((minutes % 43200) / 10080);
+            if (remainingWeeks === 0) {
+                return `${months}м`;
+            } else {
+                return `${months}м ${remainingWeeks}н`;
+            }
+        } else {
+            const years = Math.floor(minutes / 525600);
+            const remainingMonths = Math.round((minutes % 525600) / 43200);
+            if (remainingMonths === 0) {
+                return `${years}г`;
+            } else {
+                return `${years}г ${remainingMonths}м`;
+            }
+        }
+    }
+    
+    // Функция обновления параметров поля ввода в зависимости от единицы измерения
+    function updateInputConstraints() {
+        const timeUnit = document.getElementById('custom-time-unit').value;
+        const customInput = document.getElementById('custom-lifetime');
+        
+        switch(timeUnit) {
+            case 'seconds':
+                customInput.min = '1';
+                customInput.step = '1';
+                customInput.placeholder = 'Настраиваемое время (в секундах)';
+                break;
+            case 'minutes':
+                customInput.min = '0.0167';
+                customInput.step = '0.0167';
+                customInput.placeholder = 'Настраиваемое время (в минутах)';
+                break;
+            case 'hours':
+                customInput.min = '0.0167';
+                customInput.step = '0.0167';
+                customInput.placeholder = 'Настраиваемое время (в часах)';
+                break;
+            case 'days':
+                customInput.min = '0.0417';
+                customInput.step = '0.0417';
+                customInput.placeholder = 'Настраиваемое время (в днях)';
+                break;
+            case 'weeks':
+                customInput.min = '0.1429';
+                customInput.step = '0.1429';
+                customInput.placeholder = 'Настраиваемое время (в неделях)';
+                break;
+            case 'months':
+                customInput.min = '0.0833';
+                customInput.step = '0.0833';
+                customInput.placeholder = 'Настраиваемое время (в месяцах)';
+                break;
+            case 'years':
+                customInput.min = '0.0019';
+                customInput.step = '0.0019';
+                customInput.placeholder = 'Настраиваемое время (в годах)';
+                break;
+        }
+    }
+    
+    // Массив названий для отображения
+    const lifetimeNames = [
+        'Бессрочно',
+        '1 секунда',
+        '10 секунд',
+        '30 секунд',
+        '1 минута',
+        '30 минут',
+        '1 час',
+        '6 часов',
+        '12 часов',
+        '1 день',
+        '1 неделя',
+        '1 месяц',
+        '1 год'
+    ];
+    
+    // Функция обновления отображения
+    function updateLifetimeDisplay() {
+        const value = parseInt(slider.value);
+        const minutes = lifetimeValues[value];
+        const name = lifetimeNames[value];
+        
+        // Обновляем отображение
+        if (value === 0) {
+            display.innerHTML = '<i class="fas fa-infinity me-1"></i>Бессрочно';
+            display.className = 'badge bg-success fs-6';
+        } else {
+            display.innerHTML = `<i class="fas fa-clock me-1"></i>${name}`;
+            display.className = 'badge bg-primary fs-6';
+        }
+        
+        // Обновляем скрытое поле
+        hiddenInput.value = minutes;
+        
+        // Сбрасываем кастомное поле
+        customInput.value = '';
+    }
+    
+    // Обработчик изменения ползунка
+    slider.addEventListener('input', updateLifetimeDisplay);
+    
+    // Обработчик клика по маркерам
+    document.querySelectorAll('.lifetime-markers .marker').forEach(marker => {
+        marker.addEventListener('click', function() {
+            const value = parseInt(this.getAttribute('data-value'));
+            slider.value = value;
+            updateLifetimeDisplay();
+        });
+    });
+    
+    // Применение кастомного времени
+    applyCustomBtn.addEventListener('click', function() {
+        const customValue = parseFloat(customInput.value);
+        const timeUnit = document.getElementById('custom-time-unit').value;
+        
+        if (customValue > 0) {
+            // Конвертируем в минуты
+            const customMinutes = convertToMinutes(customValue, timeUnit);
+            hiddenInput.value = customMinutes;
+            
+            // Форматируем для отображения
+            const formattedTime = formatCustomTime(customMinutes);
+            display.innerHTML = `<i class="fas fa-clock me-1"></i>${formattedTime}`;
+            display.className = 'badge bg-warning fs-6';
+            
+            // Сбрасываем ползунок
+            slider.value = 0;
+            
+            // Показываем уведомление
+            showToast(`Время жизни установлено: ${formattedTime}`, 'success');
+        } else {
+            showToast('Введите корректное значение времени', 'error');
+        }
+    });
+    
+    // Enter в кастомном поле
+    customInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applyCustomBtn.click();
+        }
+    });
+    
+    // Enter в кастомном поле
+    customInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applyCustomBtn.click();
+        }
+    });
+    
+    // Обработчик изменения единиц измерения
+    document.getElementById('custom-time-unit').addEventListener('change', function() {
+        updateInputConstraints();
+        customInput.value = ''; // Сбрасываем значение при смене единицы
+    });
+    
+    // Инициализация
+    updateLifetimeDisplay();
+    updateInputConstraints(); // Устанавливаем начальные ограничения
+    
+    // Обработчик для чекбокса приватности
+    document.getElementById('is_private').addEventListener('change', function() {
+        const privateInfo = document.getElementById('private-info');
+        const secretLinkInfo = document.getElementById('secret-link-info');
+        
+        if (this.checked) {
+            privateInfo.style.display = 'block';
+            // Генерируем секретную ссылку
+            generateSecretLink();
+        } else {
+            privateInfo.style.display = 'none';
+            secretLinkInfo.style.display = 'none';
+        }
+    });
+    
+    // Функция генерации секретной ссылки
+    function generateSecretLink() {
+        const secretLinkInfo = document.getElementById('secret-link-info');
+        const secretLinkText = document.getElementById('secret-link-text');
+        
+        // Генерируем случайный ключ (32 символа)
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let secretKey = '';
+        for (let i = 0; i < 32; i++) {
+            secretKey += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        
+        const secretUrl = `${window.location.origin}/secret/${secretKey}`;
+        secretLinkText.textContent = secretUrl;
+        secretLinkInfo.style.display = 'block';
+        
+        // Сохраняем ключ для отправки с формой
+        document.getElementById('secret-key-input').value = secretKey;
+    }
+    
+    // Функция копирования секретной ссылки
+    function copySecretLink() {
+        const secretLinkText = document.getElementById('secret-link-text');
+        const textToCopy = secretLinkText.textContent;
+        
+        navigator.clipboard.writeText(textToCopy).then(function() {
+            showToast('Секретная ссылка скопирована в буфер обмена!', 'success');
+        }, function() {
+            showToast('Не удалось скопировать ссылку', 'error');
+        });
+    }
+});
+
+// Функция для показа уведомлений
+function showToast(message, type = 'info') {
+    // Создаем контейнер для уведомлений если его нет
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Создаем уведомление
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0 mb-2`;
+    toast.setAttribute('role', 'alert');
+    
+    const iconClass = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle';
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-${iconClass} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Показываем уведомление
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Удаляем уведомление после скрытия
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+    
+    // Автоматически скрываем через 5 секунд
+    setTimeout(() => {
+        if (toast.parentNode) {
+            bsToast.hide();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+/* Дополнительные стили для страницы создания */
+
+/* Улучшенный фон для основной карточки */
+.card.hover-lift {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.95));
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    box-shadow: 
+        0 8px 32px rgba(0,0,0,0.08),
+        0 2px 8px rgba(0,0,0,0.04),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.card.hover-lift:hover {
+    background: linear-gradient(135deg, rgba(241, 245, 249, 0.98), rgba(226, 232, 240, 0.98));
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 
+        0 12px 40px rgba(0,0,0,0.12),
+        0 4px 12px rgba(0,0,0,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Улучшенные стили для полей ввода */
+.form-control,
+.form-select {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(99, 102, 241, 0.1);
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 2px 8px rgba(0,0,0,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.form-control:hover,
+.form-select:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 
+        0 4px 12px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: white;
+    border-color: var(--primary);
+    box-shadow: 
+        0 0 0 3px rgba(99, 102, 241, 0.1),
+        0 4px 16px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,1);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Улучшенные стили для кнопок */
+.btn {
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 16px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 25px rgba(0,0,0,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 
+        0 2px 8px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Улучшенные стили для заголовка */
+.fade-in {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.8));
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+/* Стили для чекбокса приватности */
+.form-check-input:checked {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.form-check-input:checked:focus {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+}
+
+.form-check-input:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+}
+
+/* Анимация для информации о приватности */
+#private-info {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in:hover {
+    background: linear-gradient(135deg, rgba(241, 245, 249, 0.9), rgba(226, 232, 240, 0.9));
+    border-color: rgba(99, 102, 241, 0.2);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+#content {
+    resize: vertical;
+    min-height: 300px;
+}
+
+/* Стили для drag & drop */
+.position-relative:hover {
+    transition: all 0.3s ease;
+}
+
+/* Анимация для подсказок */
+.card ul li {
+    transition: all 0.3s ease;
+}
+
+.card ul li:hover {
+    transform: translateX(5px);
+    color: var(--primary);
+}
+
+/* Респонсивность */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .lead {
+        font-size: 1rem;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    #content {
+    min-height: 250px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(99, 102, 241, 0.1);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 2px 8px rgba(0,0,0,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+#content:focus {
+    background: white;
+    border-color: var(--primary);
+    box-shadow: 
+        0 0 0 3px rgba(99, 102, 241, 0.1),
+        0 4px 16px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,1);
+}
+}
+
+/* Стили для ползунка времени жизни */
+.lifetime-slider-container {
+    background: rgba(99, 102, 241, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.lifetime-slider-wrapper {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.lifetime-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    margin-bottom: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.lifetime-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transition: all 0.3s ease;
+}
+
+.lifetime-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.lifetime-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transition: all 0.3s ease;
+}
+
+.lifetime-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.lifetime-markers {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    margin-top: 10px;
+}
+
+.lifetime-markers::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%);
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.marker {
+    position: relative;
+    z-index: 2;
+    background: white;
+    border: 2px solid #94a3b8;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.marker:hover {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+    transform: scale(1.1);
+}
+
+.marker.active {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+    transform: scale(1.2);
+}
+
+.lifetime-display {
+    text-align: center;
+}
+
+.lifetime-display .badge {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 20px;
+}
+
+.custom-lifetime {
+    border-top: 1px solid rgba(99, 102, 241, 0.15);
+    padding-top: 15px;
+    background: rgba(99, 102, 241, 0.03);
+    border-radius: 0 0 12px 12px;
+    margin: 0 -20px -20px -20px;
+    padding: 20px 20px 20px 20px;
+}
+
+.custom-lifetime .input-group {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.custom-lifetime .form-control {
+    text-align: center;
+    font-weight: 500;
+}
+
+.custom-lifetime .form-select {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.custom-lifetime .btn {
+    border-radius: 0 6px 6px 0;
+}
+
+/* Стили для уведомлений */
+#toast-container .toast {
+    min-width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Анимации для ползунка */
+.lifetime-slider-container {
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Адаптивность для ползунка */
+@media (max-width: 768px) {
+    .lifetime-slider-container {
+        padding: 15px;
+    }
+    
+    .lifetime-markers {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+    
+    .marker {
+        width: 20px;
+        height: 20px;
+        font-size: 8px;
+    }
+    
+    .custom-lifetime .input-group {
+        max-width: 100%;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: pastebin-pro
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt && python -c "from app import app, db; app.app_context().push(); db.create_all()"
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: 0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pastebin-db
+          property: connectionString
+      # LLM API (OpenRouter - бесплатные модели)
+      - key: LLM_PROVIDER
+        value: openrouter
+      - key: LLM_MODEL
+        value: mistralai/mistral-7b-instruct
+      # Хранилище (Backblaze B2 - 10 GB бесплатно)
+      # Замените на ваши данные или используйте STORAGE_TYPE=local для тестов
+      - key: STORAGE_TYPE
+        value: s3
+      - key: S3_ENDPOINT
+        value: s3.us-west-004.backblazeb2.com
+      - key: S3_SECURE
+        value: true
+      - key: S3_REGION
+        value: us-west-004
+      - key: S3_BUCKET_NAME
+        value: pastebin-pastes
+
+databases:
+  - name: pastebin-db
+    databaseName: pastebin_db
+    user: pastebin_user
+    plan: free

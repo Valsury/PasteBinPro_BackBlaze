@@ -1,0 +1,1724 @@
+{% extends "base.html" %}
+
+{% block title %}Недавние пасты - PasteBin Pro{% endblock %}
+
+{% block content %}
+{% if pastes is none %}
+    {% set pastes = [] %}
+{% endif %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Недавно созданные пасты
+                    </h2>
+                    <div>
+                        <span class="badge bg-primary me-2">{{ pastes|length }} паст</span>
+                        <a href="{{ url_for('create_paste') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Создать пасту
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Форма поиска и фильтрации -->
+                <div class="search-filter-container mb-4">
+                    <div class="search-filter-row">
+                        <div class="search-section">
+                            <div class="search-input-group">
+                                <span class="search-icon">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" 
+                                       class="search-input" 
+                                       id="searchInput"
+                                       name="search" 
+                                       value="{{ search_query }}" 
+                                       placeholder="Поиск по названию или содержимому пасты..."
+                                       aria-label="Поиск">
+                            </div>
+                            <button type="button" class="search-btn" onclick="performSearch()">
+                                <i class="fas fa-search me-2"></i>Найти
+                            </button>
+                        </div>
+                        
+                        <div class="filter-section">
+                            <div class="filter-select-wrapper">
+                                <select class="filter-select" id="categoryFilter" onchange="performSearch()">
+                                    <option value="">Все категории</option>
+                                    {% for category in available_categories %}
+                                        <option value="{{ category }}" 
+                                                {% if category_filter == category %}selected{% endif %}>
+                                            {{ category }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <i class="fas fa-chevron-down select-arrow"></i>
+                            </div>
+                            <button type="button" class="reset-btn" onclick="resetFilters()">
+                                <i class="fas fa-times me-2"></i>Сбросить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Информация о результатах поиска -->
+                {% if search_query or category_filter %}
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <div>
+                                <strong>Результаты поиска:</strong>
+                                {% if search_query %}
+                                    <span class="badge bg-primary ms-2">{{ search_query }}</span>
+                                {% endif %}
+                                {% if category_filter %}
+                                    <span class="badge bg-success ms-2">{{ category_filter }}</span>
+                                {% endif %}
+                                <span class="ms-3">Найдено паст: <strong>{{ pastes|length }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Контейнер для результатов -->
+                <div id="resultsContainer">
+                    {% if pastes and pastes|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <i class="fas fa-heading me-2"></i>Название
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-tags me-2"></i>Категория
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-calendar me-2"></i>Дата создания
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-clock me-2"></i>Время жизни
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-eye me-2"></i>Статус
+                                        </th>
+                                        <th>
+                                            <i class="fas fa-tools me-2"></i>Действия
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pastesTableBody">
+                                    {% for paste in pastes %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-file-code text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ paste.title }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">ID: {{ paste.id }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ paste.language }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-calendar-alt text-info me-2"></i>
+                                                <div>
+                                                    <div>{{ paste.created_at.strftime('%d.%m.%Y') if paste.created_at else '' }}</div>
+                                                    <small class="text-muted">{{ paste.created_at.strftime('%H:%M') if paste.created_at else '' }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if paste.lifetime == 0 %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-infinity me-1"></i>Бессрочно
+                                                </span>
+                                            {% else %}
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-hourglass-half text-warning me-2"></i>
+                                                    <div class="remaining-time" data-paste-id="{{ paste.id }}" data-expires-at="{{ paste.expires_at.isoformat() if paste.expires_at else '' }}">
+                                                        {% if paste.expires_at %}
+                                                            <span class="time-display">{{ paste.get_remaining_time_formatted() }}</span>
+                                                        {% else %}
+                                                            <span class="time-display">Вычисляется...</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if paste.is_expired %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times-circle me-1"></i>Истекла
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Активна
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('view_paste', paste_id=paste.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="Просмотр">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-outline-info" 
+                                                        onclick="copyPasteUrl('{{ url_for('view_paste', paste_id=paste.id) }}')"
+                                                        title="Копировать ссылку">
+                                                    <i class="fas fa-link"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success" 
+                                                        onclick="downloadPaste('{{ paste.title }}', '{{ paste.content|replace('\n', '\\n')|replace('"', '\\"') if paste.content else '' }}', '{{ paste.language }}')"
+                                                        title="Скачать">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" 
+                                                        onclick="showQRCode({{ paste.id }}, '{{ paste.title }}')"
+                                                        title="Показать QR-код">
+                                                    <i class="fas fa-qrcode"></i>
+                                                </button>
+                                                {% if not paste.is_expired %}
+                                                <button class="btn btn-sm btn-outline-danger delete-paste-btn" 
+                                                        data-paste-id="{{ paste.id }}" 
+                                                        data-paste-title="{{ paste.title }}"
+                                                        title="Удалить">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    
+                    <!-- Статистика -->
+                    <div class="row mt-4">
+                                                 <div class="col-md-3">
+                             <div class="card bg-primary text-white text-center">
+                                 <div class="card-body">
+                                     <h4 class="mb-1">{{ stats.total_pastes if stats else 0 }}</h4>
+                                     <small>Всего паст</small>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="col-md-3">
+                             <div class="card bg-success text-white text-center">
+                                 <div class="card-body">
+                                     <h4 class="mb-1">{{ stats.active_pastes if stats else 0 }}</h4>
+                                     <small>Активных</small>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="col-md-3">
+                             <div class="card bg-warning text-white text-center">
+                                 <div class="card-body">
+                                     <h4 class="mb-1">{{ stats.expired_pastes if stats else 0 }}</h4>
+                                     <small>Истекших</small>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="col-md-3">
+                             <div class="card bg-info text-white text-center">
+                                 <div class="card-body">
+                                     <h4 class="mb-1">{{ stats.categories if stats else 0 }}</h4>
+                                     <small>Категорий</small>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                    
+                    <!-- Популярные языки -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                                                 <div class="card-header">
+                                     <h6 class="mb-0">
+                                         <i class="fas fa-chart-pie me-2"></i>Популярные категории
+                                     </h6>
+                                 </div>
+                                <div class="card-body">
+                                                                         {% set category_counts = {} %}
+                                     {% for paste in pastes %}
+                                         {% if paste.language not in category_counts %}
+                                             {% set _ = category_counts.update({paste.language: 1}) %}
+                                         {% else %}
+                                             {% set _ = category_counts.update({paste.language: category_counts[paste.language] + 1}) %}
+                                         {% endif %}
+                                     {% endfor %}
+                                     
+                                     {% for category, count in category_counts.items() %}
+                                     {% if loop.index <= 5 %}
+                                     <div class="d-flex justify-content-between align-items-center mb-2">
+                                         <span class="badge bg-primary">{{ category }}</span>
+                                         <div class="progress flex-grow-1 mx-3" style="height: 8px;">
+                                             <div class="progress-bar bg-primary" 
+                                                  style="width: {{ (count / pastes|length * 100)|int }}%"></div>
+                                         </div>
+                                         <small class="text-muted">{{ count }}</small>
+                                     </div>
+                                     {% endif %}
+                                     {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-clock me-2"></i>Активность по времени
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center">
+                                                                                 <div class="bg-light rounded p-3 mb-3">
+                                             <i class="fas fa-calendar-week text-primary fa-2x mb-2"></i>
+                                             <h6>Последние 7 дней</h6>
+                                             <p class="mb-0">
+                                                 <strong>{{ stats.pastes_this_week if stats else 0 }}</strong> паст
+                                             </p>
+                                         </div>
+                                         
+                                         <div class="bg-light rounded p-3">
+                                             <i class="fas fa-calendar-day text-success fa-2x mb-2"></i>
+                                             <h6>Всего паст</h6>
+                                             <p class="mb-0">
+                                                 <strong>{{ stats.total_pastes if stats else 0 }}</strong> паст
+                                             </p>
+                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                             style="width: 100px; height: 100px;">
+                            <i class="fas fa-inbox fa-3x text-muted"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">Пасты не найдены</h4>
+                        <p class="text-muted mb-4">
+                            У вас пока нет созданных паст. Создайте первую пасту и она появится здесь!
+                        </p>
+                        <a href="{{ url_for('create_paste') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus me-2"></i>Создать первую пасту
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Копирование ссылки на пасту
+function copyPasteUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Ссылка скопирована в буфер обмена!', 'success');
+    }).catch(() => {
+        showToast('Ошибка при копировании ссылки', 'error');
+    });
+}
+
+// Скачивание пасты
+function downloadPaste(title, content, language) {
+    if (!content) {
+        showToast('Содержимое пасты недоступно для скачивания', 'error');
+        return;
+    }
+    
+    const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.${language === 'text' ? 'txt' : language}`;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showToast('Паста успешно скачана!', 'success');
+}
+
+// Удаление пасты
+function deletePaste(pasteId, pasteTitle) {
+    if (confirm(`Вы уверены, что хотите удалить пасту "${pasteTitle}"? Это действие нельзя отменить.`)) {
+        // Находим кнопку удаления и показываем индикатор загрузки
+        const deleteBtn = document.querySelector(`[data-paste-id="${pasteId}"]`);
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        deleteBtn.disabled = true;
+        
+        // Отправляем запрос на удаление
+        fetch(`/paste/${pasteId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Паста успешно удалена!', 'success');
+                // Удаляем строку из таблицы
+                const row = deleteBtn.closest('tr');
+                row.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    row.remove();
+                    // Обновляем счетчики
+                    updateCounters();
+                    // Обновляем категории после удаления
+                    loadCategories();
+                }, 500);
+            } else {
+                showToast(data.error || 'Ошибка при удалении пасты', 'error');
+                // Восстанавливаем кнопку
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showToast('Произошла ошибка при удалении пасты', 'error');
+            // Восстанавливаем кнопку
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        });
+    }
+}
+
+// Обновление счетчиков после удаления
+function updateCounters() {
+    const rows = document.querySelectorAll('tbody tr');
+    const totalPastes = rows.length;
+    
+    // Обновляем общий счетчик
+    const totalBadge = document.querySelector('.badge.bg-primary');
+    if (totalBadge) {
+        totalBadge.textContent = totalPastes;
+    }
+    
+    // Обновляем активные пасты
+    const activeBadge = document.querySelector('.card.bg-success h4');
+    if (activeBadge) {
+        const activePastes = Array.from(rows).filter(row => 
+            !row.querySelector('.badge.bg-danger')
+        ).length;
+        activeBadge.textContent = activePastes;
+    }
+    
+    // Если паст не осталось, показываем сообщение
+    if (totalPastes === 0) {
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <h5>Пасты не найдены</h5>
+                        <p>Создайте первую пасту, чтобы начать работу!</p>
+                        <a href="{{ url_for('create_paste') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Создать пасту
+                        </a>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Функция для форматирования оставшегося времени
+function formatRemainingTime(minutes) {
+    if (minutes <= 0) {
+        return "Истекла";
+    }
+    
+    // Конвертируем в секунды для более точного расчета
+    const totalSeconds = Math.floor(minutes * 60);
+    
+    if (totalSeconds < 60) {
+        // Меньше минуты - показываем в секундах
+        return `${totalSeconds}с`;
+    } else if (totalSeconds < 3600) {
+        // Меньше часа - показываем в минутах и секундах
+        const mins = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        if (seconds === 0) {
+            return `${mins}м`;
+        } else {
+            return `${mins}м ${seconds}с`;
+        }
+    } else if (totalSeconds < 86400) {
+        // Меньше дня - показываем в часах, минутах и секундах
+        const hours = Math.floor(totalSeconds / 3600);
+        const remainingSeconds = totalSeconds % 3600;
+        const mins = Math.floor((remainingSeconds % 3600) / 60);
+        const seconds = remainingSeconds % 60;
+        
+        if (mins === 0 && seconds === 0) {
+            return `${hours}ч`;
+        } else if (seconds === 0) {
+            return `${hours}ч ${mins}м`;
+        } else {
+            return `${hours}ч ${mins}м ${seconds}с`;
+        }
+    } else {
+        // Больше дня - показываем в днях, часах, минутах
+        const days = Math.floor(totalSeconds / 86400);
+        const remainingSeconds = totalSeconds % 86400;
+        const hours = Math.floor(remainingSeconds / 3600);
+        const mins = Math.floor((remainingSeconds % 3600) / 60);
+        
+        if (hours === 0 && mins === 0) {
+            return `${days}д`;
+        } else if (mins === 0) {
+            return `${days}д ${hours}ч`;
+        } else {
+            return `${days}д ${hours}ч ${mins}м`;
+        }
+    }
+}
+
+// Функция для обновления таймеров
+function updateTimers() {
+    const now = new Date();
+    
+    document.querySelectorAll('.remaining-time').forEach(timeElement => {
+        const pasteId = timeElement.getAttribute('data-paste-id');
+        const expiresAt = timeElement.getAttribute('data-expires-at');
+        
+        if (!expiresAt) return;
+        
+        const expiresDate = new Date(expiresAt);
+        const remainingMs = expiresDate.getTime() - now.getTime();
+        const remainingSeconds = Math.floor(remainingMs / 1000);
+        const remainingMinutes = remainingSeconds / 60; // Сохраняем дробную часть
+        
+        const timeDisplay = timeElement.querySelector('.time-display');
+        
+        if (remainingSeconds <= 0) {
+            // Паста истекла - проверяем, не обновляли ли уже
+            if (timeDisplay.textContent !== "Истекла") {
+                timeDisplay.textContent = "Истекла";
+                timeDisplay.className = "time-display text-danger";
+                
+                // Обновляем статус на "Истекла"
+                const statusCell = timeElement.closest('tr').querySelector('.badge');
+                if (statusCell) {
+                    if (statusCell.classList.contains('bg-success')) {
+                        statusCell.className = 'badge bg-danger';
+                        statusCell.innerHTML = '<i class="fas fa-times-circle me-1"></i>Истекла';
+                    } else if (statusCell.classList.contains('bg-warning')) {
+                        statusCell.className = 'badge bg-danger';
+                        statusCell.innerHTML = '<i class="fas fa-times-circle me-1"></i>Истекла';
+                    }
+                }
+            }
+        } else {
+            // Паста активна
+            const formattedTime = formatRemainingTime(remainingMinutes);
+            timeDisplay.textContent = formattedTime;
+            timeDisplay.className = "time-display";
+            
+            // Добавляем цветовую индикацию в зависимости от оставшегося времени
+            if (remainingMinutes <= 0.5) { // 30 секунд
+                timeDisplay.className = "time-display text-danger";
+            } else if (remainingMinutes <= 2) { // 2 минуты
+                timeDisplay.className = "time-display text-warning";
+            } else {
+                timeDisplay.className = "time-display text-success";
+            }
+        }
+    });
+}
+
+// Показать уведомление
+function showToast(message, type) {
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    
+    // Определяем цвет и иконку в зависимости от типа
+    let bgClass, iconClass;
+    switch(type) {
+        case 'success':
+            bgClass = 'success';
+            iconClass = 'check-circle';
+            break;
+        case 'warning':
+            bgClass = 'warning';
+            iconClass = 'exclamation-triangle';
+            break;
+        case 'error':
+        default:
+            bgClass = 'danger';
+            iconClass = 'exclamation-triangle';
+            break;
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${bgClass} border-0`;
+    toast.setAttribute('role', 'alert');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-${iconClass} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    document.body.appendChild(toastContainer);
+    
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        document.body.removeChild(toastContainer);
+    });
+}
+
+// Автоматическое обновление таймеров каждую секунду для точного отображения секунд
+setInterval(() => {
+    updateTimers();
+}, 1000);
+
+// Обновляем таймеры сразу при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    updateTimers();
+    
+    // Добавляем обработчики для кнопок удаления
+    document.querySelectorAll('.delete-paste-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pasteId = this.getAttribute('data-paste-id');
+            const pasteTitle = this.getAttribute('data-paste-title');
+            deletePaste(pasteId, pasteTitle);
+        });
+    });
+    
+    // Добавляем функциональность живого поиска
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                // Автоматический поиск через 500ms после остановки ввода
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    performSearch();
+                }
+            }, 500);
+        });
+        
+        // Поиск при нажатии Enter
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+    }
+    
+    // Функция выполнения поиска и фильтрации
+    function performSearch() {
+        const searchQuery = document.getElementById('searchInput').value;
+        const categoryFilter = document.getElementById('categoryFilter').value;
+        
+        // Показываем индикатор загрузки
+        showLoadingIndicator();
+        
+        // Формируем URL для поиска
+        const url = `/api/search?q=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(categoryFilter)}`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.pastes) {
+                    updateResultsTable(data.pastes);
+                    updateSearchInfo(searchQuery, categoryFilter, data.pastes.length);
+                    updateCategories(data.categories || []);
+                    updateStatistics();
+                } else {
+                    showNoResults();
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка поиска:', error);
+                showError('Произошла ошибка при поиске');
+            })
+            .finally(() => {
+                hideLoadingIndicator();
+            });
+    }
+    
+    // Функция сброса фильтров
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('categoryFilter').value = '';
+        
+        // Скрываем информацию о поиске
+        const searchInfo = document.getElementById('searchInfo');
+        if (searchInfo) {
+            searchInfo.style.display = 'none';
+        }
+        
+        // Выполняем поиск без фильтров
+        performSearch();
+        
+        // Показываем уведомление
+        showToast('Фильтры сброшены', 'success');
+    }
+    
+    // Функция обновления таблицы результатов
+    function updateResultsTable(pastes) {
+        const tbody = document.getElementById('pastesTableBody');
+        
+        if (pastes.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-search fa-3x mb-3"></i>
+                            <h5>Пасты не найдены</h5>
+                            <p>Попробуйте изменить параметры поиска</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = pastes.map(paste => `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 40px; height: 40px;">
+                            <i class="fas fa-file-code text-primary"></i>
+                        </div>
+                        <div>
+                            <strong>${escapeHtml(paste.title)}</strong>
+                            <br>
+                            <small class="text-muted">ID: ${paste.id}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-primary">${escapeHtml(paste.language)}</span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-calendar-alt text-info me-2"></i>
+                        <div>
+                            <div>${formatDate(paste.created_at)}</div>
+                            <small class="text-muted">${formatTime(paste.created_at)}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-hourglass-half text-warning me-2"></i>
+                        <div class="remaining-time" data-paste-id="${paste.id}" data-expires-at="${paste.expires_at || ''}">
+                            <span class="time-display">Вычисляется...</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge ${paste.is_expired ? 'bg-danger' : 'bg-success'}">
+                        <i class="fas fa-${paste.is_expired ? 'times-circle' : 'check-circle'} me-1"></i>
+                        ${paste.is_expired ? 'Истекла' : 'Активна'}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="${paste.url}" 
+                           class="btn btn-sm btn-outline-primary" 
+                           title="Просмотр">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-info" 
+                                onclick="copyPasteUrl('${paste.url}')"
+                                title="Копировать ссылку">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" 
+                                onclick="downloadPaste('${escapeHtml(paste.title)}', '', '${escapeHtml(paste.language)}')"
+                                title="Скачать">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        ${!paste.is_expired ? `
+                        <button class="btn btn-sm btn-outline-danger delete-paste-btn" 
+                                data-paste-id="${paste.id}" 
+                                data-paste-title="${escapeHtml(paste.title)}"
+                                title="Удалить">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+        
+        // Обновляем таймеры для новых строк
+        updateTimers();
+        
+        // Добавляем обработчики для кнопок удаления
+        addDeleteHandlers();
+    }
+    
+    // Функция обновления информации о поиске
+    function updateSearchInfo(searchQuery, categoryFilter, resultsCount) {
+        let searchInfo = document.getElementById('searchInfo');
+        
+        if (!searchInfo) {
+            searchInfo = document.createElement('div');
+            searchInfo.id = 'searchInfo';
+            searchInfo.className = 'alert alert-info mb-4';
+            document.querySelector('.card-body').insertBefore(searchInfo, document.getElementById('resultsContainer'));
+        }
+        
+        if (searchQuery || categoryFilter) {
+            searchInfo.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <div>
+                        <strong>Результаты поиска:</strong>
+                        ${searchQuery ? `<span class="badge bg-primary ms-2">${escapeHtml(searchQuery)}</span>` : ''}
+                        ${categoryFilter ? `<span class="badge bg-success ms-2">${escapeHtml(categoryFilter)}</span>` : ''}
+                        <span class="ms-3">Найдено паст: <strong>${resultsCount}</strong></span>
+                    </div>
+                </div>
+            `;
+            searchInfo.style.display = 'block';
+        } else {
+            searchInfo.style.display = 'none';
+        }
+    }
+    
+    // Функция показа сообщения об отсутствии результатов
+    function showNoResults() {
+        const tbody = document.getElementById('pastesTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <h5>Пасты не найдены</h5>
+                        <p>Попробуйте изменить параметры поиска</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    
+    // Функция показа ошибки
+    function showError(message) {
+        const tbody = document.getElementById('pastesTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <div class="text-danger">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                        <h5>Ошибка</h5>
+                        <p>${message}</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    
+    // Функция показа индикатора загрузки
+    function showLoadingIndicator() {
+        const tbody = document.getElementById('pastesTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                        <h5>Поиск...</h5>
+                        <p>Пожалуйста, подождите</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    
+    // Функция скрытия индикатора загрузки
+    function hideLoadingIndicator() {
+        // Индикатор скрывается автоматически при обновлении таблицы
+    }
+    
+    // Функция обновления статистики
+    function updateStatistics() {
+        // Здесь можно добавить обновление статистики через AJAX
+        // Пока оставляем как есть
+    }
+    
+    // Функция обновления списка категорий
+    function updateCategories(categories) {
+        const categorySelect = document.getElementById('categoryFilter');
+        const currentValue = categorySelect.value;
+        
+        // Сохраняем текущее значение, если оно все еще валидно
+        let shouldKeepCurrent = false;
+        if (currentValue && categories.includes(currentValue)) {
+            shouldKeepCurrent = true;
+        }
+        
+        // Очищаем текущий список
+        categorySelect.innerHTML = '<option value="">Все категории</option>';
+        
+        // Добавляем новые категории
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+        
+        // Восстанавливаем предыдущее значение, если оно валидно
+        if (shouldKeepCurrent) {
+            categorySelect.value = currentValue;
+        } else if (currentValue) {
+            // Если текущая категория больше не доступна, сбрасываем фильтр
+            categorySelect.value = '';
+            // Показываем уведомление
+            showToast(`Категория "${currentValue}" больше не доступна и была удалена из фильтра`, 'warning');
+        }
+        
+        // Обновляем счетчик категорий в статистике
+        updateCategoryCount(categories.length);
+    }
+    
+    // Функция обновления счетчика категорий
+    function updateCategoryCount(count) {
+        const categoryCard = document.querySelector('.card.bg-info h4');
+        if (categoryCard) {
+            categoryCard.textContent = count;
+        }
+    }
+    
+    // Функция загрузки категорий при инициализации
+    function loadCategories() {
+        fetch('/api/categories')
+            .then(response => response.json())
+            .then(data => {
+                if (data.categories) {
+                    updateCategories(data.categories);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке категорий:', error);
+            });
+    }
+    
+    // Вспомогательные функции
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU');
+    }
+    
+    function formatTime(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // Функция добавления обработчиков для кнопок удаления
+    function addDeleteHandlers() {
+        document.querySelectorAll('.delete-paste-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const pasteId = this.getAttribute('data-paste-id');
+                const pasteTitle = this.getAttribute('data-paste-title');
+                deletePaste(pasteId, pasteTitle);
+            });
+        });
+    }
+    
+            // Загружаем актуальный список категорий при инициализации
+        loadCategories();
+        
+        // Добавляем подсветку найденного текста
+        highlightSearchResults();
+    });
+
+// Функция для подсветки найденного текста
+function highlightSearchResults() {
+    const searchQuery = '{{ search_query }}';
+    if (!searchQuery) return;
+    
+    const searchLower = searchQuery.toLowerCase();
+    const titleElements = document.querySelectorAll('tbody tr td:first-child strong');
+    const contentPreview = document.querySelectorAll('tbody tr td:first-child small');
+    
+    // Подсвечиваем названия паст
+    titleElements.forEach(element => {
+        const originalText = element.textContent;
+        if (searchLower && originalText.toLowerCase().includes(searchLower)) {
+            const highlightedText = originalText.replace(
+                new RegExp(`(${searchQuery})`, 'gi'),
+                '<mark class="bg-warning">$1</mark>'
+            );
+            element.innerHTML = highlightedText;
+        }
+    });
+    
+    // Подсвечиваем ID паст
+    contentPreview.forEach(element => {
+        const originalText = element.textContent;
+        if (searchLower && originalText.toLowerCase().includes(searchLower)) {
+            const highlightedText = originalText.replace(
+                new RegExp(`(${searchQuery})`, 'gi'),
+                '<mark class="bg-warning">$1</mark>'
+            );
+            element.innerHTML = highlightedText;
+        }
+    });
+}
+
+
+</script>
+
+<style>
+.progress {
+    background-color: rgba(52, 152, 219, 0.2);
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--light-gray);
+    transform: scale(1.01);
+    transition: all 0.3s ease;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+}
+
+.btn-group .btn {
+    border-radius: 6px;
+    margin: 0 2px;
+}
+
+/* Стили для таймеров */
+.time-display {
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.time-display.text-danger {
+    animation: pulse 1s infinite;
+}
+
+.time-display.text-warning {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+
+
+.toast {
+    min-width: 300px;
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin: 1px 0;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .search-filter-container {
+        padding: 16px;
+        border-radius: 16px;
+    }
+    
+    .search-filter-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .search-section {
+        flex: none;
+        width: 100%;
+        min-width: auto;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .search-input-group {
+        width: 100%;
+    }
+    
+    .search-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .filter-section {
+        flex: none;
+        width: 100%;
+        min-width: auto;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .filter-select-wrapper {
+        width: 100%;
+    }
+    
+    .reset-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-filter-container {
+        padding: 12px;
+        border-radius: 12px;
+    }
+    
+    .search-input,
+    .filter-select,
+    .search-btn,
+    .reset-btn {
+        padding: 14px 16px;
+        font-size: 14px;
+    }
+    
+    .search-input {
+        padding-left: 44px;
+    }
+    
+    .filter-select {
+        padding-right: 44px;
+    }
+}
+
+/* Современные стили для формы поиска и фильтрации */
+.search-filter-container {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,249,250,0.95));
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 
+        0 8px 32px rgba(0,0,0,0.08),
+        0 2px 8px rgba(0,0,0,0.04),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+    transition: all 0.3s ease;
+}
+
+.search-filter-container:hover {
+    box-shadow: 
+        0 12px 40px rgba(0,0,0,0.12),
+        0 4px 12px rgba(0,0,0,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.9);
+    transform: translateY(-2px);
+}
+
+.search-filter-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-section {
+    flex: 2;
+    min-width: 300px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-input-group {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    z-index: 2;
+    transition: color 0.3s ease;
+}
+
+.search-input {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    border: 2px solid #e9ecef;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 500;
+    background: white;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 2px 8px rgba(0,0,0,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    color: #495057;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 4px rgba(0,123,255,0.1);
+    transform: translateY(-2px);
+}
+
+.search-input:focus + .search-icon {
+    color: #007bff;
+}
+
+.search-input::placeholder {
+    color: #adb5bd;
+    font-weight: 400;
+    transition: color 0.3s ease;
+}
+
+.search-input:focus::placeholder {
+    color: #6c757d;
+}
+
+.search-btn {
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 16px rgba(13,110,253,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.search-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(13,110,253,0.4);
+    background: linear-gradient(135deg, #0b5ed7, #084298);
+}
+
+.search-btn:active {
+    transform: translateY(-1px);
+}
+
+.filter-section {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.filter-select-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 16px 48px 16px 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 500;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 2px 8px rgba(0,0,0,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    appearance: none;
+    color: #495057;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 4px rgba(40,167,69,0.1);
+    transform: translateY(-2px);
+}
+
+.select-arrow {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+}
+
+.filter-select:focus + .select-arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.filter-select option {
+    padding: 12px;
+    font-weight: 500;
+    background: white;
+    color: #495057;
+}
+
+.filter-select option:hover {
+    background: #f8f9fa;
+}
+
+.reset-btn {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #6c757d, #495057);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 16px rgba(108,117,125,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.reset-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(108,117,125,0.4);
+    background: linear-gradient(135deg, #5a6268, #343a40);
+}
+
+.reset-btn:active {
+    transform: translateY(-1px);
+}
+
+/* Дополнительные эффекты для кнопок */
+.search-btn,
+.reset-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.search-btn::before,
+.reset-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.search-btn:hover::before,
+.reset-btn:hover::before {
+    left: 100%;
+}
+
+/* Улучшенные стили для иконок в кнопках */
+.search-btn i,
+.reset-btn i {
+    transition: transform 0.3s ease;
+}
+
+.search-btn:hover i,
+.reset-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Стили для уведомления о результатах поиска */
+.alert-info {
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(155, 89, 182, 0.1));
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Стили для предупреждений */
+.alert-warning {
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info .badge {
+    font-size: 0.875rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+/* Стили для подсветки найденного текста */
+mark.bg-warning {
+    background-color: rgba(255, 193, 7, 0.3) !important;
+    color: inherit;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: inherit;
+}
+
+/* Анимации для формы поиска */
+.search-filter-container {
+    animation: slideInUp 0.6s ease-out;
+}
+
+.search-section {
+    animation: slideInLeft 0.7s ease-out;
+}
+
+.filter-section {
+    animation: slideInRight 0.7s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Стили для подсказок поиска */
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 5px;
+}
+
+.search-suggestions-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--light-gray);
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.search-suggestion-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-suggestion-item:hover {
+    background: rgba(52, 152, 219, 0.1);
+    transform: translateX(5px);
+}
+
+.search-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--dark-color);
+}
+
+.suggestion-meta {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.suggestion-meta .badge {
+    font-size: 0.75rem;
+}
+
+/* Анимация появления подсказок */
+.search-suggestions {
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для индикатора загрузки */
+.fa-spinner {
+    color: var(--primary-color);
+}
+
+/* Анимации для результатов поиска */
+#resultsContainer {
+    transition: all 0.3s ease;
+}
+
+#resultsContainer .table tbody tr {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для сообщений о результатах */
+.alert-info {
+    animation: slideInRight 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Улучшенные стили для кнопок */
+.btn-outline-secondary:hover {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Стили для пустого состояния */
+.text-muted .fa-search,
+.text-muted .fa-exclamation-triangle {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.text-muted:hover .fa-search,
+.text-muted:hover .fa-exclamation-triangle {
+    opacity: 1;
+}
+</style>
+
+<!-- QR Code Modal -->
+<div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrCodeModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>QR-код пасты
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrCodeContainer">
+                    <div id="qrCodeLoading" class="text-center">
+                        <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                        <p class="text-muted mt-2">Генерация QR-кода...</p>
+                    </div>
+                    <div id="qrCodeImage" class="d-none"></div>
+                </div>
+                <div id="qrCodeInfo" class="mt-3 d-none">
+                    <h6 id="qrCodeTitle" class="text-primary"></h6>
+                    <p class="text-muted small" id="qrCodeUrl"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" onclick="copyQRCodeUrl()">
+                    <i class="fas fa-copy me-1"></i>Копировать ссылку
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция для показа QR-кода
+function showQRCode(pasteId, pasteTitle) {
+    const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+    const loadingDiv = document.getElementById('qrCodeLoading');
+    const imageDiv = document.getElementById('qrCodeImage');
+    const infoDiv = document.getElementById('qrCodeInfo');
+    const titleElement = document.getElementById('qrCodeTitle');
+    const urlElement = document.getElementById('qrCodeUrl');
+    
+    // Сбрасываем состояние
+    loadingDiv.classList.remove('d-none');
+    imageDiv.classList.add('d-none');
+    infoDiv.classList.add('d-none');
+    
+    // Устанавливаем заголовок
+    titleElement.textContent = pasteTitle;
+    
+    // Показываем модальное окно
+    modal.show();
+    
+    // Запрашиваем QR-код
+    fetch(`/paste/${pasteId}/qr`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Создаем изображение QR-кода
+                const img = document.createElement('img');
+                img.src = data.qr_code;
+                img.alt = 'QR-код для пасты';
+                img.style.width = '200px';
+                img.style.height = '200px';
+                img.style.border = '1px solid #dee2e6';
+                img.style.borderRadius = '8px';
+                
+                // Очищаем контейнер и добавляем изображение
+                imageDiv.innerHTML = '';
+                imageDiv.appendChild(img);
+                
+                // Устанавливаем URL
+                urlElement.textContent = data.url;
+                
+                // Показываем результат
+                loadingDiv.classList.add('d-none');
+                imageDiv.classList.remove('d-none');
+                infoDiv.classList.remove('d-none');
+            } else {
+                // Показываем ошибку
+                imageDiv.innerHTML = `
+                    <div class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <p class="mt-2">Ошибка генерации QR-кода</p>
+                        <p class="small text-muted">${data.error || 'Неизвестная ошибка'}</p>
+                    </div>
+                `;
+                loadingDiv.classList.add('d-none');
+                imageDiv.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке QR-кода:', error);
+            imageDiv.innerHTML = `
+                <div class="text-center text-danger">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    <p class="mt-2">Ошибка загрузки QR-кода</p>
+                    <p class="small text-muted">Проверьте подключение к интернету</p>
+                </div>
+            `;
+            loadingDiv.classList.add('d-none');
+            imageDiv.classList.remove('d-none');
+        });
+}
+
+// Функция для копирования URL из QR-кода
+function copyQRCodeUrl() {
+    const urlElement = document.getElementById('qrCodeUrl');
+    const url = urlElement.textContent;
+    
+    if (url) {
+        navigator.clipboard.writeText(url).then(function() {
+            showToast('Ссылка скопирована в буфер обмена!', 'success');
+        }, function() {
+            showToast('Не удалось скопировать ссылку', 'error');
+        });
+    }
+}
+</script>
+{% endblock %}
