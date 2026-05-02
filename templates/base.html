@@ -19,7 +19,7 @@
     
     <style>
         :root {
-            /* Цветовая палитра */
+            /* Цветовая палитра - Светлая тема */
             --primary: #6366f1;
             --primary-dark: #4f46e5;
             --secondary: #8b5cf6;
@@ -39,13 +39,23 @@
             --gray-700: #374151;
             --gray-800: #1f2937;
             --gray-900: #111827;
-            
+
+            /* Тема-специфичные переменные */
+            --bg-primary: #f8f9ff;
+            --bg-secondary: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.3);
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --navbar-bg: rgba(255, 255, 255, 0.88);
+
             /* Градиенты */
             --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
             --gradient-success: linear-gradient(135deg, var(--success) 0%, var(--accent) 100%);
             --gradient-warm: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
-            
+            --gradient-bg: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 25%, #f0f8ff 50%, #f5f0ff 75%, #fff8f0 100%);
+
             /* Тени */
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -53,10 +63,41 @@
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
             --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-            
+
             /* Анимации */
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Темная тема */
+        [data-theme="dark"] {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #a78bfa;
+            --accent: #22d3ee;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+
+            /* Темная палитра */
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(51, 65, 85, 0.5);
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --navbar-bg: rgba(15, 23, 42, 0.95);
+
+            /* Темные градиенты */
+            --gradient-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0f172a 50%, #1e293b 75%, #0f172a 100%);
+
+            /* Темные тени */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+            --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.7);
         }
 
         * {
@@ -65,12 +106,13 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 25%, #f0f8ff 50%, #f5f0ff 75%, #fff8f0 100%);
+            background: var(--gradient-bg);
             background-size: 400% 400%;
             animation: gradientShift 20s ease infinite;
             min-height: 100vh;
-            color: var(--gray-800);
+            color: var(--text-primary);
             line-height: 1.6;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         @keyframes gradientShift {
@@ -83,14 +125,15 @@
 
         /* Навигация */
         .navbar {
-            background: rgba(255, 255, 255, 0.88);
+            background: var(--navbar-bg);
             backdrop-filter: blur(30px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid var(--border-color);
             box-shadow: var(--shadow-lg);
             position: sticky;
             top: 0;
             z-index: 1000;
             padding: 1rem 0;
+            transition: background 0.3s ease;
         }
 
         .navbar-brand {
@@ -110,7 +153,7 @@
         }
 
         .nav-link {
-            color: var(--gray-700) !important;
+            color: var(--text-primary) !important;
             font-weight: 500;
             padding: 0.75rem 1.5rem !important;
             border-radius: 12px;
@@ -147,9 +190,9 @@
 
         /* Карточки */
         .card {
-            background: rgba(255, 255, 255, 0.92);
+            background: var(--card-bg);
             backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
             box-shadow: var(--shadow-xl);
             transition: var(--transition);
@@ -519,6 +562,61 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary-dark);
         }
+        /* Переключатель темы */
+        .theme-toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: var(--gradient-primary);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .theme-toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        [data-theme="dark"] .theme-toggle-slider {
+            transform: translateX(30px);
+            background: var(--gray-800);
+        }
+
+        .theme-toggle-icon {
+            font-size: 12px;
+            color: var(--primary);
+        }
+
+        [data-theme="dark"] .theme-toggle-icon {
+            color: var(--warning);
+        }
+
+        .theme-toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
     </style>
 </head>
 <body>
@@ -556,6 +654,13 @@
                         </a>
                     </li>
                 </ul>
+                <div class="theme-toggle-wrapper ms-3">
+                    <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+                        <div class="theme-toggle-slider">
+                            <i class="fas fa-sun theme-toggle-icon"></i>
+                        </div>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -666,5 +771,55 @@
     </script>
     
     {% block scripts %}{% endblock %}
+    <script>
+        // Управление темой
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('.theme-toggle-icon');
+        const html = document.documentElement;
+
+        // Загружаем сохраненную тему или определяем системную
+        function getPreferredTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                return savedTheme;
+            }
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        // Применяем тему
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            // Обновляем иконку
+            if (theme === 'dark') {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            } else {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+        }
+
+        // Переключаем тему
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        }
+
+        // Инициализация темы при загрузке
+        setTheme(getPreferredTheme());
+
+        // Обработчик клика
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Слушаем изменения системной темы
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    </script>
 </body>
 </html>
