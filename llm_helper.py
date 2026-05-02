@@ -160,7 +160,8 @@ class UniversalLLMHelper:
                     'success': True,
                     'text': text,
                     'model': self.model,
-                    'provider': self.provider
+                    'provider': self.provider,
+                    'tokens_used': len(text.split())  # Примерная оценка
                 }
             else:
                 error_msg = f"HTTP {response.status_code}: {response.text}"
