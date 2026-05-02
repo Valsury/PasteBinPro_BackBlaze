@@ -114,7 +114,8 @@
         [data-theme="dark"] .card-text,
         [data-theme="dark"] p,
         [data-theme="dark"] .form-label,
-        [data-theme="dark"] label {
+        [data-theme="dark"] label,
+        [data-theme="dark"] .form-text {
             color: #e2e8f0 !important;
         }
 
@@ -139,9 +140,86 @@
             background-clip: text !important;
         }
 
+        /* Bootstrap цветные классы в темной теме */
+        [data-theme="dark"] .text-primary {
+            color: #a5b4fc !important;
+        }
+
+        [data-theme="dark"] .text-success {
+            color: #6ee7b7 !important;
+        }
+
+        [data-theme="dark"] .text-warning {
+            color: #fcd34d !important;
+        }
+
+        [data-theme="dark"] .text-danger {
+            color: #fca5a5 !important;
+        }
+
+        [data-theme="dark"] .text-info {
+            color: #67e8f9 !important;
+        }
+
+        [data-theme="dark"] .text-secondary {
+            color: #c4b5fd !important;
+        }
+
+        /* Иконки Font Awesome */
+        [data-theme="dark"] .fa-heading,
+        [data-theme="dark"] .fa-tags,
+        [data-theme="dark"] .fa-clock,
+        [data-theme="dark"] .fa-info-circle,
+        [data-theme="dark"] .fa-calendar,
+        [data-theme="dark"] .fa-search {
+            color: inherit !important;
+        }
+
+        /* Маркеры и метки */
+        [data-theme="dark"] .marker,
+        [data-theme="dark"] .lifetime-markers span {
+            color: #cbd5e1 !important;
+        }
+
+        /* Поисковые элементы */
+        [data-theme="dark"] .search-input,
+        [data-theme="dark"] .filter-select {
+            background: rgba(15, 23, 42, 0.8) !important;
+            color: #f1f5f9 !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .search-input::placeholder {
+            color: #64748b !important;
+        }
+
+        [data-theme="dark"] .search-icon {
+            color: #94a3b8 !important;
+        }
+
+        /* Кнопки */
+        [data-theme="dark"] .btn-primary {
+            background: var(--gradient-primary) !important;
+            border: none !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .search-btn,
+        [data-theme="dark"] .reset-btn {
+            background: rgba(129, 140, 248, 0.2) !important;
+            color: #c7d2fe !important;
+            border-color: rgba(129, 140, 248, 0.3) !important;
+        }
+
+        [data-theme="dark"] .search-btn:hover,
+        [data-theme="dark"] .reset-btn:hover {
+            background: rgba(129, 140, 248, 0.3) !important;
+        }
+
         [data-theme="dark"] .form-control,
         [data-theme="dark"] .form-select,
-        [data-theme="dark"] textarea {
+        [data-theme="dark"] textarea,
+        [data-theme="dark"] .form-control-lg {
             background-color: rgba(15, 23, 42, 0.6) !important;
             border-color: rgba(71, 85, 105, 0.5) !important;
             color: #f1f5f9 !important;
@@ -149,7 +227,8 @@
 
         [data-theme="dark"] .form-control:focus,
         [data-theme="dark"] .form-select:focus,
-        [data-theme="dark"] textarea:focus {
+        [data-theme="dark"] textarea:focus,
+        [data-theme="dark"] .form-control-lg:focus {
             background-color: rgba(15, 23, 42, 0.8) !important;
             border-color: var(--primary) !important;
             color: #f1f5f9 !important;
@@ -168,6 +247,19 @@
             color: #f1f5f9 !important;
         }
 
+        /* Ползунок времени жизни */
+        [data-theme="dark"] .form-range {
+            background: rgba(71, 85, 105, 0.3) !important;
+        }
+
+        [data-theme="dark"] .form-range::-webkit-slider-thumb {
+            background: var(--primary) !important;
+        }
+
+        [data-theme="dark"] .form-range::-moz-range-thumb {
+            background: var(--primary) !important;
+        }
+
         [data-theme="dark"] .table {
             color: #e2e8f0 !important;
         }
@@ -175,21 +267,47 @@
         [data-theme="dark"] .table thead th {
             color: #f1f5f9 !important;
             border-color: rgba(71, 85, 105, 0.5) !important;
+            background: rgba(15, 23, 42, 0.4) !important;
         }
 
         [data-theme="dark"] .table tbody td {
             border-color: rgba(71, 85, 105, 0.3) !important;
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .table-hover tbody tr:hover {
+            background: rgba(129, 140, 248, 0.1) !important;
         }
 
         [data-theme="dark"] .badge {
-            background: rgba(129, 140, 248, 0.2) !important;
-            color: #c7d2fe !important;
+            background: rgba(129, 140, 248, 0.3) !important;
+            color: #e0e7ff !important;
+        }
+
+        [data-theme="dark"] .bg-primary {
+            background: rgba(129, 140, 248, 0.3) !important;
+        }
+
+        [data-theme="dark"] .bg-success {
+            background: rgba(52, 211, 153, 0.3) !important;
         }
 
         [data-theme="dark"] .alert {
             background: rgba(30, 41, 59, 0.8) !important;
             border-color: rgba(71, 85, 105, 0.5) !important;
             color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .alert-info {
+            background: rgba(34, 211, 238, 0.15) !important;
+            border-color: rgba(34, 211, 238, 0.3) !important;
+            color: #e0f2fe !important;
+        }
+
+        [data-theme="dark"] .alert-success {
+            background: rgba(52, 211, 153, 0.15) !important;
+            border-color: rgba(52, 211, 153, 0.3) !important;
+            color: #d1fae5 !important;
         }
 
         [data-theme="dark"] code,
@@ -228,35 +346,6 @@
         [data-theme="dark"] #ai-status span,
         [data-theme="dark"] #current-model span {
             color: #cbd5e1 !important;
-        }
-
-        [data-theme="dark"] .text-success {
-            color: #34d399 !important;
-        }
-
-        [data-theme="dark"] .text-danger {
-            color: #f87171 !important;
-        }
-
-        [data-theme="dark"] .text-warning {
-            color: #fbbf24 !important;
-        }
-
-        [data-theme="dark"] .text-info {
-            color: #22d3ee !important;
-        }
-
-        /* Кнопки в темной теме */
-        [data-theme="dark"] .btn-outline-primary {
-            color: #a5b4fc !important;
-            border-color: #818cf8 !important;
-            background: rgba(129, 140, 248, 0.1) !important;
-        }
-
-        [data-theme="dark"] .btn-outline-primary:hover {
-            background: rgba(129, 140, 248, 0.2) !important;
-            border-color: #a5b4fc !important;
-            color: #c7d2fe !important;
         }
 
         /* Статистика и счетчики */
@@ -308,13 +397,268 @@
 
         /* Прогресс бары */
         [data-theme="dark"] .progress {
-            background: rgba(15, 23, 42, 0.6) !important;
+            background: rgba(15, 23, 42, 0.8) !important;
+        }
+
+        [data-theme="dark"] .progress-bar {
+            background: var(--gradient-primary) !important;
         }
 
         /* Tooltips */
         [data-theme="dark"] .tooltip-inner {
             background: rgba(15, 23, 42, 0.95) !important;
             color: #f1f5f9 !important;
+        }
+
+        /* Чекбоксы и радио */
+        [data-theme="dark"] .form-check-input {
+            background-color: rgba(15, 23, 42, 0.6) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .form-check-input:checked {
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+        }
+
+        [data-theme="dark"] .form-check-label {
+            color: #e2e8f0 !important;
+        }
+
+        /* Дополнительные правила для элементов с inline стилями */
+        [data-theme="dark"] .card-title {
+            color: #f1f5f9 !important;
+        }
+
+        [data-theme="dark"] .card-text {
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] .small {
+            color: #94a3b8 !important;
+        }
+
+        [data-theme="dark"] .fw-semibold,
+        [data-theme="dark"] .fw-bold {
+            color: inherit !important;
+        }
+
+        [data-theme="dark"] .input-group-text {
+            background-color: rgba(15, 23, 42, 0.6) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] .btn-outline-secondary {
+            color: #cbd5e1 !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+            background-color: rgba(30, 41, 59, 0.4) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            color: #f1f5f9 !important;
+            background-color: rgba(71, 85, 105, 0.6) !important;
+            border-color: rgba(71, 85, 105, 0.7) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary {
+            color: #a5b4fc !important;
+            border-color: rgba(129, 140, 248, 0.5) !important;
+            background-color: rgba(30, 41, 59, 0.4) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary:hover {
+            color: #ffffff !important;
+            background-color: rgba(129, 140, 248, 0.6) !important;
+            border-color: rgba(129, 140, 248, 0.7) !important;
+        }
+
+        [data-theme="dark"] .btn-sm {
+            color: inherit !important;
+        }
+
+        [data-theme="dark"] .badge-success {
+            background-color: rgba(52, 211, 153, 0.3) !important;
+            color: #6ee7b7 !important;
+        }
+
+        [data-theme="dark"] .lead {
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] .display-4 {
+            color: #f1f5f9 !important;
+        }
+
+        [data-theme="dark"] .gradient-text {
+            background: linear-gradient(135deg, #a5b4fc 0%, #c7d2fe 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        [data-theme="dark"] .list-unstyled li {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .list-unstyled li strong {
+            color: #f1f5f9 !important;
+        }
+
+        [data-theme="dark"] #char-count {
+            color: #94a3b8 !important;
+        }
+
+        [data-theme="dark"] .position-absolute .btn {
+            background-color: rgba(30, 41, 59, 0.8) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+            color: #cbd5e1 !important;
+        }
+
+        /* Специфичные правила для страницы Create */
+        [data-theme="dark"] .lifetime-slider-container {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .lifetime-slider {
+            background: linear-gradient(90deg, rgba(71, 85, 105, 0.5) 0%, rgba(100, 116, 139, 0.5) 100%) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .lifetime-markers::before {
+            background: linear-gradient(90deg, rgba(71, 85, 105, 0.5) 0%, rgba(100, 116, 139, 0.5) 100%) !important;
+        }
+
+        [data-theme="dark"] .marker {
+            background: rgba(30, 41, 59, 0.9) !important;
+            border-color: rgba(100, 116, 139, 0.7) !important;
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] .marker:hover {
+            background: rgba(129, 140, 248, 0.6) !important;
+            border-color: #818cf8 !important;
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .marker.active {
+            background: rgba(129, 140, 248, 0.8) !important;
+            border-color: #818cf8 !important;
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .custom-lifetime {
+            background: rgba(15, 23, 42, 0.4) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .lifetime-display .badge {
+            background: rgba(129, 140, 248, 0.3) !important;
+            color: #e0e7ff !important;
+        }
+
+        [data-theme="dark"] .bg-warning {
+            background: rgba(251, 191, 36, 0.3) !important;
+            color: #fef3c7 !important;
+        }
+
+        /* Специфичные правила для страницы Recent */
+        [data-theme="dark"] .table-hover tbody tr {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .table-hover tbody tr:hover td {
+            color: #f1f5f9 !important;
+        }
+
+        [data-theme="dark"] .table td a {
+            color: #a5b4fc !important;
+        }
+
+        [data-theme="dark"] .table td a:hover {
+            color: #c7d2fe !important;
+        }
+
+        [data-theme="dark"] .search-icon {
+            color: #94a3b8 !important;
+        }
+
+        /* Правила для всех иконок Font Awesome */
+        [data-theme="dark"] .fa-heading,
+        [data-theme="dark"] .fa-tags,
+        [data-theme="dark"] .fa-clock,
+        [data-theme="dark"] .fa-lock,
+        [data-theme="dark"] .fa-file-code,
+        [data-theme="dark"] .fa-magic,
+        [data-theme="dark"] .fa-shield-alt,
+        [data-theme="dark"] .fa-share-alt,
+        [data-theme="dark"] .fa-lightbulb,
+        [data-theme="dark"] .fa-check-circle,
+        [data-theme="dark"] .fa-info-circle,
+        [data-theme="dark"] .fa-edit,
+        [data-theme="dark"] .fa-plus-circle {
+            color: inherit !important;
+        }
+
+        /* Правила для карточек с border стилями */
+        [data-theme="dark"] .card[style*="border"] {
+            border-color: rgba(71, 85, 105, 0.5) !important;
+            background: rgba(30, 41, 59, 0.6) !important;
+        }
+
+        [data-theme="dark"] .card[style*="background"] {
+            background: rgba(30, 41, 59, 0.6) !important;
+        }
+
+        /* Правила для элементов с градиентами */
+        [data-theme="dark"] .fade-in {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-color: rgba(71, 85, 105, 0.5) !important;
+        }
+
+        [data-theme="dark"] .fade-in:hover {
+            background: rgba(30, 41, 59, 0.7) !important;
+        }
+
+        /* Правила для alert элементов */
+        [data-theme="dark"] #private-info,
+        [data-theme="dark"] #secret-link-info {
+            background: rgba(34, 211, 238, 0.15) !important;
+            border-color: rgba(34, 211, 238, 0.3) !important;
+            color: #e0f2fe !important;
+        }
+
+        [data-theme="dark"] #secret-link-text {
+            color: #bfdbfe !important;
+        }
+
+        /* Правила для span элементов */
+        [data-theme="dark"] span:not(.badge):not(.marker) {
+            color: inherit !important;
+        }
+
+        /* Правила для всех label элементов */
+        [data-theme="dark"] label {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] label .text-danger {
+            color: #fca5a5 !important;
+        }
+
+        /* Правила для placeholder текста */
+        [data-theme="dark"] ::placeholder {
+            color: #64748b !important;
+            opacity: 1 !important;
+        }
+
+        [data-theme="dark"] :-ms-input-placeholder {
+            color: #64748b !important;
+        }
+
+        [data-theme="dark"] ::-ms-input-placeholder {
+            color: #64748b !important;
         }
 
         * {
