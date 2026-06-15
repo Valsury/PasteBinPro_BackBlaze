@@ -1,5 +1,7 @@
 from minio import Minio
 from minio.error import S3Error
+import boto3
+from botocore.exceptions import ClientError
 import hashlib
 import json
 import os
@@ -48,15 +50,15 @@ class MinioStorage:
         self.secure = os.getenv('S3_SECURE', os.getenv('MINIO_SECURE', 'false')).lower() == 'true'
         self.region = os.getenv('S3_REGION', 'us-east-1')
 
-        # Специальная обработка для разных провайдеров
+        # Определяем тип провайдера
+        self.use_boto3 = False
         if 'backblazeb2.com' in self.endpoint:
-            # Backblaze B2 требует region в endpoint
-            print(f"🗄️ Detected Backblaze B2")
+            print(f"🗄️ Detected Backblaze B2 - using boto3")
+            self.use_boto3 = True
         elif self.endpoint.endswith('amazonaws.com') or self.endpoint == 's3':
-            # AWS S3
+            print(f"🗄️ Detected AWS S3")
             self.endpoint = None
         elif 'r2.cloudflarestorage.com' in self.endpoint:
-            # Cloudflare R2
             print(f"🗄️ Detected Cloudflare R2")
 
         print(f"🗄️ S3 Storage Configuration:")
@@ -64,21 +66,25 @@ class MinioStorage:
         print(f"   Bucket: {self.bucket_name}")
         print(f"   Region: {self.region}")
         print(f"   Secure: {self.secure}")
+        print(f"   Using boto3: {self.use_boto3}")
 
         try:
-            # Инициализация клиента
-            if self.endpoint:
-                # Backblaze B2 - не передаём region в конструктор
-                if 'backblazeb2.com' in self.endpoint:
-                    print(f"   Using Backblaze B2 configuration (region in endpoint)")
-                    self.client = Minio(
-                        self.endpoint,
-                        access_key=self.access_key,
-                        secret_key=self.secret_key,
-                        secure=self.secure
-                    )
-                else:
-                    # MinIO, R2, Spaces и другие S3-совместимые сервисы
+            if self.use_boto3:
+                # Backblaze B2 через boto3 (лучше работает с подписями)
+                endpoint_url = f"https://{self.endpoint}" if self.secure else f"http://{self.endpoint}"
+                self.s3_client = boto3.client(
+                    's3',
+                    endpoint_url=endpoint_url,
+                    aws_access_key_id=self.access_key,
+                    aws_secret_access_key=self.secret_key,
+                    region_name=self.region
+                )
+                # Проверяем подключение
+                self.s3_client.head_bucket(Bucket=self.bucket_name)
+                print("✅ Backblaze B2 Storage initialized successfully (boto3)")
+            else:
+                # Minio клиент для других провайдеров
+                if self.endpoint:
                     self.client = Minio(
                         self.endpoint,
                         access_key=self.access_key,
@@ -86,18 +92,17 @@ class MinioStorage:
                         secure=self.secure,
                         region=self.region
                     )
-            else:
-                # AWS S3
-                self.client = Minio(
-                    's3.amazonaws.com',
-                    access_key=self.access_key,
-                    secret_key=self.secret_key,
-                    secure=True,
-                    region=self.region
-                )
-
-            self._ensure_bucket_exists()
-            print("✅ S3 Storage initialized successfully")
+                else:
+                    # AWS S3
+                    self.client = Minio(
+                        's3.amazonaws.com',
+                        access_key=self.access_key,
+                        secret_key=self.secret_key,
+                        secure=True,
+                        region=self.region
+                    )
+                self._ensure_bucket_exists()
+                print("✅ S3 Storage initialized successfully (minio)")
 
         except Exception as e:
             print(f"❌ S3 Storage initialization error: {e}")
@@ -171,22 +176,31 @@ class MinioStorage:
         try:
             content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
             object_name = f"{paste_id}/content.txt"
-
             content_bytes = content.encode('utf-8')
-            content_stream = io.BytesIO(content_bytes)
 
-            self.client.put_object(
-                self.bucket_name,
-                object_name,
-                content_stream,
-                length=len(content_bytes),
-                content_type='text/plain; charset=utf-8'
-            )
+            if self.use_boto3:
+                # Backblaze B2 через boto3
+                self.s3_client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=object_name,
+                    Body=content_bytes,
+                    ContentType='text/plain; charset=utf-8'
+                )
+            else:
+                # Minio клиент
+                content_stream = io.BytesIO(content_bytes)
+                self.client.put_object(
+                    self.bucket_name,
+                    object_name,
+                    content_stream,
+                    length=len(content_bytes),
+                    content_type='text/plain; charset=utf-8'
+                )
 
             print(f"✅ Paste {paste_id} saved to S3 storage")
             return content_hash
 
-        except S3Error as e:
+        except (S3Error, ClientError) as e:
             print(f"❌ S3 save error: {e}")
             raise
 
@@ -200,16 +214,22 @@ class MinioStorage:
         # S3 хранилище
         try:
             object_name = f"{paste_id}/content.txt"
-            response = self.client.get_object(self.bucket_name, object_name)
-            content = response.read().decode('utf-8')
 
-            response.close()
-            response.release_conn()
+            if self.use_boto3:
+                # Backblaze B2 через boto3
+                response = self.s3_client.get_object(Bucket=self.bucket_name, Key=object_name)
+                content = response['Body'].read().decode('utf-8')
+            else:
+                # Minio клиент
+                response = self.client.get_object(self.bucket_name, object_name)
+                content = response.read().decode('utf-8')
+                response.close()
+                response.release_conn()
 
             print(f"✅ Paste {paste_id} loaded from S3 storage (length: {len(content)})")
             return content
 
-        except S3Error as e:
+        except (S3Error, ClientError) as e:
             print(f"❌ S3 read error for paste {paste_id}: {e}")
             raise
         except Exception as e:
@@ -226,10 +246,17 @@ class MinioStorage:
         # S3 хранилище
         try:
             object_name = f"{paste_id}/content.txt"
-            self.client.remove_object(self.bucket_name, object_name)
+
+            if self.use_boto3:
+                # Backblaze B2 через boto3
+                self.s3_client.delete_object(Bucket=self.bucket_name, Key=object_name)
+            else:
+                # Minio клиент
+                self.client.remove_object(self.bucket_name, object_name)
+
             print(f"✅ Paste {paste_id} deleted from S3 storage")
 
-        except S3Error as e:
+        except (S3Error, ClientError) as e:
             print(f"❌ S3 delete error: {e}")
             raise
 
@@ -244,21 +271,30 @@ class MinioStorage:
         try:
             object_name = f"{paste_id}/metadata.json"
             metadata_json = json.dumps(metadata, ensure_ascii=False, indent=2)
-
             metadata_bytes = metadata_json.encode('utf-8')
-            metadata_stream = io.BytesIO(metadata_bytes)
 
-            self.client.put_object(
-                self.bucket_name,
-                object_name,
-                metadata_stream,
-                length=len(metadata_bytes),
-                content_type='application/json; charset=utf-8'
-            )
+            if self.use_boto3:
+                # Backblaze B2 через boto3
+                self.s3_client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=object_name,
+                    Body=metadata_bytes,
+                    ContentType='application/json; charset=utf-8'
+                )
+            else:
+                # Minio клиент
+                metadata_stream = io.BytesIO(metadata_bytes)
+                self.client.put_object(
+                    self.bucket_name,
+                    object_name,
+                    metadata_stream,
+                    length=len(metadata_bytes),
+                    content_type='application/json; charset=utf-8'
+                )
 
             print(f"✅ Paste {paste_id} metadata saved to S3 storage")
 
-        except S3Error as e:
+        except (S3Error, ClientError) as e:
             print(f"❌ Metadata save error: {e}")
             raise
 
@@ -270,17 +306,23 @@ class MinioStorage:
         # S3 хранилище
         try:
             object_name = f"{paste_id}/metadata.json"
-            response = self.client.get_object(self.bucket_name, object_name)
-            metadata_json = response.read().decode('utf-8')
 
-            response.close()
-            response.release_conn()
+            if self.use_boto3:
+                # Backblaze B2 через boto3
+                response = self.s3_client.get_object(Bucket=self.bucket_name, Key=object_name)
+                metadata_json = response['Body'].read().decode('utf-8')
+            else:
+                # Minio клиент
+                response = self.client.get_object(self.bucket_name, object_name)
+                metadata_json = response.read().decode('utf-8')
+                response.close()
+                response.release_conn()
 
             metadata = json.loads(metadata_json)
             print(f"✅ Paste {paste_id} metadata loaded from S3 storage")
             return metadata
 
-        except S3Error as e:
+        except (S3Error, ClientError) as e:
             print(f"⚠️ Metadata read error: {e}")
             return {}
 
@@ -369,10 +411,17 @@ class MinioStorage:
         # S3 хранилище
         try:
             object_name = f"{paste_id}/metadata.json"
-            self.client.remove_object(self.bucket_name, object_name)
+
+            if self.use_boto3:
+                # Backblaze B2 через boto3
+                self.s3_client.delete_object(Bucket=self.bucket_name, Key=object_name)
+            else:
+                # Minio клиент
+                self.client.remove_object(self.bucket_name, object_name)
+
             print(f"✅ Paste {paste_id} metadata deleted from S3 storage")
 
-        except S3Error as e:
+        except (S3Error, ClientError) as e:
             print(f"⚠️ Metadata delete error: {e}")
 
     def get_bucket_info(self) -> dict:
