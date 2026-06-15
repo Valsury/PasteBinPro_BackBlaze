@@ -969,10 +969,49 @@ def secret_paste_qr_code(secret_key):
 
 if __name__ == '__main__':
     with app.app_context():
+        # Применяем миграцию timezone автоматически при старте
+        try:
+            from sqlalchemy import text, inspect
+
+            # Проверяем, нужна ли миграция (проверяем тип колонки created_at в pastes)
+            inspector = inspect(db.engine)
+            columns = inspector.get_columns('pastes')
+            created_at_col = next((col for col in columns if col['name'] == 'created_at'), None)
+
+            if created_at_col:
+                # Проверяем, является ли тип TIMESTAMP без timezone
+                col_type = str(created_at_col['type'])
+                if 'TIMESTAMP WITHOUT TIME ZONE' in col_type.upper() or col_type.upper() == 'TIMESTAMP':
+                    print("🔧 Применяем миграцию timezone для DateTime колонок...")
+
+                    queries = [
+                        "ALTER TABLE pastes ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC'",
+                        "ALTER TABLE pastes ALTER COLUMN expires_at TYPE TIMESTAMPTZ USING expires_at AT TIME ZONE 'UTC'",
+                        "ALTER TABLE users ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC'",
+                        "ALTER TABLE tags ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC'",
+                        "ALTER TABLE app_stats ALTER COLUMN updated_at TYPE TIMESTAMPTZ USING updated_at AT TIME ZONE 'UTC'"
+                    ]
+
+                    for query in queries:
+                        try:
+                            db.session.execute(text(query))
+                            print(f"✅ {query[:60]}...")
+                        except Exception as e:
+                            # Игнорируем ошибки если колонка уже TIMESTAMPTZ
+                            if "already type timestamp with time zone" not in str(e).lower():
+                                print(f"⚠️ Ошибка миграции: {e}")
+
+                    db.session.commit()
+                    print("✅ Миграция timezone применена успешно")
+                else:
+                    print("✅ DateTime колонки уже имеют timezone")
+        except Exception as e:
+            print(f"⚠️ Не удалось проверить/применить миграцию timezone: {e}")
+
         # Создаем таблицы если их нет
         db.create_all()
         print("База данных инициализирована")
-        
+
         # Инициализируем счетчик общего количества паст, если его нет
         current_total = Paste.query.count()
         if current_total > 0:
