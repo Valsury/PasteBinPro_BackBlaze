@@ -1362,7 +1362,47 @@
         }
 
         [data-theme="dark"] .table-responsive {
-            background: transparent !important;
+            background: rgba(30, 41, 59, 0.6) !important;
+            border-radius: 16px;
+        }
+
+        /* Исправление элементов с классом mb-3 (делаем светлее) */
+        [data-theme="dark"] .mb-3.bg-light,
+        [data-theme="dark"] .bg-light.rounded {
+            background: rgba(51, 65, 85, 0.4) !important;
+        }
+
+        /* Исправление кнопок btn-outline-primary */
+        [data-theme="dark"] .btn-outline-primary {
+            color: #c7d2fe !important;
+            border-color: rgba(129, 140, 248, 0.5) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary:hover {
+            color: #ffffff !important;
+            background-color: rgba(129, 140, 248, 0.6) !important;
+            border-color: rgba(129, 140, 248, 0.7) !important;
+        }
+
+        /* Исправление текста внутри btn-sm */
+        [data-theme="dark"] .btn-sm {
+            color: inherit !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary.btn-sm {
+            color: #c7d2fe !important;
+        }
+
+        /* Предотвращение переноса слов в заголовках карточек */
+        .card-title {
+            white-space: nowrap;
+        }
+
+        /* Для мобильных устройств разрешаем перенос */
+        @media (max-width: 768px) {
+            .card-title {
+                white-space: normal;
+            }
         }
 
     </style>
