@@ -1664,18 +1664,22 @@ function showQRCode(pasteId, pasteTitle) {
                 const img = document.createElement('img');
                 img.src = data.qr_code;
                 img.alt = 'QR-код для пасты';
-                img.style.width = '200px';
-                img.style.height = '200px';
-                img.style.border = '1px solid #dee2e6';
-                img.style.borderRadius = '8px';
-                
+                img.style.width = '300px';
+                img.style.height = '300px';
+                img.style.border = '2px solid #dee2e6';
+                img.style.borderRadius = '12px';
+                img.style.padding = '10px';
+                img.style.backgroundColor = 'white';
+                img.style.display = 'block';
+                img.style.margin = '0 auto';
+
                 // Очищаем контейнер и добавляем изображение
                 imageDiv.innerHTML = '';
                 imageDiv.appendChild(img);
-                
+
                 // Устанавливаем URL
                 urlElement.textContent = data.url;
-                
+
                 // Показываем результат
                 loadingDiv.classList.add('d-none');
                 imageDiv.classList.remove('d-none');

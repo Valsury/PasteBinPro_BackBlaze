@@ -864,34 +864,42 @@ def manual_cleanup():
             'error': f'Ошибка при очистке: {str(e)}'
         }), 500
 
-def generate_qr_code(data, size=200):
+def generate_qr_code(data, size=400):
     """Генерирует QR-код и возвращает его как base64 строку"""
     try:
+        # Используем более высокий уровень коррекции ошибок для лучшего сканирования
         qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
+            version=None,  # Автоматический выбор версии
+            error_correction=qrcode.constants.ERROR_CORRECT_H,  # Высокий уровень коррекции
+            box_size=15,  # Увеличиваем размер блоков для лучшего сканирования
+            border=4,  # Достаточная граница
         )
         qr.add_data(data)
         qr.make(fit=True)
-        
-        # Создаем изображение
+
+        # Создаем изображение с использованием PIL для лучшего качества
         img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Изменяем размер изображения
-        img = img.resize((size, size))
-        
+
+        # Конвертируем в RGB если необходимо
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+
+        # НЕ изменяем размер - используем оригинальный размер для лучшего качества
+        # Это обеспечит четкие края и лучшее сканирование
+
         # Конвертируем в base64
         buffer = io.BytesIO()
-        img.save(buffer, format='PNG')
+        img.save(buffer, format='PNG', optimize=False, quality=100)  # Максимальное качество
         buffer.seek(0)
-        
+
         img_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        print(f"✅ QR-код сгенерирован для URL: {data[:50]}... (размер: {img.size})")
+
         return f"data:image/png;base64,{img_base64}"
-        
+
     except Exception as e:
-        print(f"Ошибка генерации QR-кода: {e}")
+        print(f"❌ Ошибка генерации QR-кода: {e}")
         return None
 
 @app.route('/paste/<int:paste_id>/qr')
