@@ -409,16 +409,31 @@ function shareOnTelegram() {
 }
 
 function shareOnMAX() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Посмотрите на эту пасту: {{ paste.title }}');
-    // MAX Messenger использует схему max://
-    // Если приложение не установлено, откроется веб-версия
-    window.open(`max://share?url=${url}&text=${text}`, '_blank');
+    const url = window.location.href;
+    const text = 'Посмотрите на эту пасту: {{ paste.title }}';
+    const fullMessage = `${text}\n${url}`;
 
-    // Fallback: если MAX не открылся, показываем уведомление
+    // Пытаемся открыть приложение MAX через deep link
+    const deepLink = `maxim://share?text=${encodeURIComponent(fullMessage)}`;
+    const webLink = `https://max.ru/share?url=${encodeURIComponent(url)}`;
+
+    // Пробуем открыть приложение
+    const opened = window.open(deepLink, '_blank');
+
+    // Если приложение не открылось, копируем ссылку и показываем инструкцию
     setTimeout(() => {
-        alert('Если MAX Messenger не открылся, убедитесь что приложение установлено.\n\nВы также можете скопировать ссылку и отправить вручную: ' + window.location.href);
-    }, 1500);
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+                if (confirm('Ссылка скопирована в буфер обмена!\n\nОткрыть веб-версию MAX для отправки?')) {
+                    window.open('https://web.max.ru/', '_blank');
+                }
+            }).catch(() => {
+                alert('Откройте MAX Messenger и отправьте эту ссылку:\n\n' + url);
+            });
+        } else {
+            alert('Откройте MAX Messenger и отправьте эту ссылку:\n\n' + url);
+        }
+    }, 1000);
 }
 
 function deletePaste() {
