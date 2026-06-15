@@ -16,8 +16,8 @@ class Paste(db.Model):
     is_private = db.Column(db.Boolean, default=False)
     secret_key = db.Column(db.String(64), unique=True, nullable=True)  # Секретный ключ для приватных паст
     views_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime(timezone=True))
     is_expired = db.Column(db.Boolean, default=False)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     tags = db.Column(db.ARRAY(db.String), default=[])  # Массив строк для тегов
@@ -127,7 +127,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, default=True)
     
     pastes = db.relationship('Paste', backref='author', lazy=True)
@@ -140,7 +140,7 @@ class Tag(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     def __repr__(self):
         return f'<Tag {self.name}>'
@@ -151,7 +151,7 @@ class AppStats(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(100), unique=True, nullable=False)
     value = db.Column(db.Integer, default=0)
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     def __repr__(self):
         return f'<AppStats {self.key}: {self.value}>'
