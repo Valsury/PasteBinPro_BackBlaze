@@ -260,6 +260,65 @@
         </div>
     </div>
 </div>
+
+<!-- MAX Share Modal -->
+<div class="modal fade" id="maxShareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Max_logo_2025.png/30px-Max_logo_2025.png"
+                         alt="MAX"
+                         style="height: 20px; margin-right: 8px; vertical-align: middle;">
+                    Поделиться в MAX
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Как отправить пасту в MAX:</strong>
+                </div>
+
+                <ol class="mb-3">
+                    <li>Скопируйте ссылку ниже</li>
+                    <li>Откройте MAX Messenger</li>
+                    <li>Выберите контакт или чат</li>
+                    <li>Вставьте ссылку (Ctrl+V или ⌘+V)</li>
+                </ol>
+
+                <div class="mb-3">
+                    <label class="form-label"><strong>Ссылка на пасту:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="maxShareUrl" readonly>
+                        <button class="btn btn-primary" onclick="copyMaxUrl()">
+                            <i class="fas fa-copy me-1"></i>Копировать
+                        </button>
+                    </div>
+                    <small class="text-success d-none mt-1" id="maxCopySuccess" style="display: block;">
+                        <i class="fas fa-check me-1"></i>Скопировано в буфер обмена!
+                    </small>
+                </div>
+
+                <div class="text-center mb-3">
+                    <div id="maxQRCode" style="display: inline-block;"></div>
+                    <p class="text-muted small mt-2 mb-0">
+                        <i class="fas fa-qrcode me-1"></i>Отсканируйте QR-код в MAX
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Закрыть
+                </button>
+                <button type="button" class="btn btn-primary" onclick="openMaxWeb()">
+                    <i class="fas fa-external-link-alt me-1"></i>Открыть MAX (веб)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -418,25 +477,70 @@ function shareOnMAX() {
 
     // Пытаемся открыть приложение MAX через deep link
     const deepLink = `maxim://share?text=${encodeURIComponent(fullMessage)}`;
-    const webLink = `https://max.ru/share?url=${encodeURIComponent(url)}`;
+    window.location.href = deepLink;
 
-    // Пробуем открыть приложение
-    const opened = window.open(deepLink, '_blank');
-
-    // Если приложение не открылось, копируем ссылку и показываем инструкцию
+    // Через 500ms показываем modal (если приложение не открылось)
     setTimeout(() => {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(() => {
-                if (confirm('Ссылка скопирована в буфер обмена!\n\nОткрыть веб-версию MAX для отправки?')) {
-                    window.open('https://web.max.ru/', '_blank');
+        // Заполняем ссылку в modal
+        document.getElementById('maxShareUrl').value = url;
+
+        // Генерируем QR-код
+        const qrContainer = document.getElementById('maxQRCode');
+        qrContainer.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x text-muted"></i></div>';
+
+        {% if paste.is_private %}
+        const qrUrl = `/secret/{{ paste.secret_key }}/qr`;
+        {% else %}
+        const qrUrl = `/paste/{{ paste.id }}/qr`;
+        {% endif %}
+
+        fetch(qrUrl)
+            .then(response => response.json())
+            .then(data => {
+                qrContainer.innerHTML = '';
+                if (data.success) {
+                    const img = document.createElement('img');
+                    img.src = data.qr_code;
+                    img.alt = 'QR-код';
+                    img.style.width = '200px';
+                    img.style.height = '200px';
+                    img.style.border = '2px solid #dee2e6';
+                    img.style.borderRadius = '8px';
+                    qrContainer.appendChild(img);
+                } else {
+                    qrContainer.innerHTML = '<p class="text-danger small">Ошибка загрузки QR-кода</p>';
                 }
-            }).catch(() => {
-                alert('Откройте MAX Messenger и отправьте эту ссылку:\n\n' + url);
+            })
+            .catch(() => {
+                qrContainer.innerHTML = '<p class="text-danger small">Ошибка загрузки QR-кода</p>';
             });
-        } else {
-            alert('Откройте MAX Messenger и отправьте эту ссылку:\n\n' + url);
-        }
-    }, 1000);
+
+        // Показываем modal
+        const modal = new bootstrap.Modal(document.getElementById('maxShareModal'));
+        modal.show();
+    }, 500);
+}
+
+function copyMaxUrl() {
+    const urlInput = document.getElementById('maxShareUrl');
+    const successMsg = document.getElementById('maxCopySuccess');
+
+    urlInput.select();
+    navigator.clipboard.writeText(urlInput.value).then(() => {
+        // Показываем успешное сообщение
+        successMsg.classList.remove('d-none');
+
+        // Скрываем через 2 секунды
+        setTimeout(() => {
+            successMsg.classList.add('d-none');
+        }, 2000);
+    }).catch(() => {
+        alert('Не удалось скопировать. Скопируйте вручную: ' + urlInput.value);
+    });
+}
+
+function openMaxWeb() {
+    window.open('https://web.max.ru/', '_blank');
 }
 
 function deletePaste() {
