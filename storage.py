@@ -68,14 +68,24 @@ class MinioStorage:
         try:
             # Инициализация клиента
             if self.endpoint:
-                # MinIO, B2, R2, Spaces и другие S3-совместимые сервисы
-                self.client = Minio(
-                    self.endpoint,
-                    access_key=self.access_key,
-                    secret_key=self.secret_key,
-                    secure=self.secure,
-                    region=self.region
-                )
+                # Backblaze B2 - не передаём region в конструктор
+                if 'backblazeb2.com' in self.endpoint:
+                    print(f"   Using Backblaze B2 configuration (region in endpoint)")
+                    self.client = Minio(
+                        self.endpoint,
+                        access_key=self.access_key,
+                        secret_key=self.secret_key,
+                        secure=self.secure
+                    )
+                else:
+                    # MinIO, R2, Spaces и другие S3-совместимые сервисы
+                    self.client = Minio(
+                        self.endpoint,
+                        access_key=self.access_key,
+                        secret_key=self.secret_key,
+                        secure=self.secure,
+                        region=self.region
+                    )
             else:
                 # AWS S3
                 self.client = Minio(
