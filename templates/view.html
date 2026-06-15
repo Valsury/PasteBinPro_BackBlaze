@@ -207,8 +207,8 @@
                     <button class="btn btn-outline-primary" onclick="shareOnTelegram()">
                         <i class="fab fa-telegram me-2"></i>Telegram
                     </button>
-                    <button class="btn btn-outline-success" onclick="shareOnWhatsApp()">
-                        <i class="fab fa-whatsapp me-2"></i>WhatsApp
+                    <button class="btn btn-outline-info" onclick="shareOnMAX()">
+                        <i class="fas fa-paper-plane me-2"></i>MAX Messenger
                     </button>
                     <div class="text-center mt-3">
                         <div id="qrcode-container" class="d-inline-block">
@@ -408,10 +408,17 @@ function shareOnTelegram() {
     window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
 }
 
-function shareOnWhatsApp() {
+function shareOnMAX() {
     const url = encodeURIComponent(window.location.href);
     const text = encodeURIComponent('Посмотрите на эту пасту: {{ paste.title }}');
-    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+    // MAX Messenger использует схему max://
+    // Если приложение не установлено, откроется веб-версия
+    window.open(`max://share?url=${url}&text=${text}`, '_blank');
+
+    // Fallback: если MAX не открылся, показываем уведомление
+    setTimeout(() => {
+        alert('Если MAX Messenger не открылся, убедитесь что приложение установлено.\n\nВы также можете скопировать ссылку и отправить вручную: ' + window.location.href);
+    }, 1500);
 }
 
 function deletePaste() {
