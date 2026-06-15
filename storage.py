@@ -79,9 +79,9 @@ class MinioStorage:
                     aws_secret_access_key=self.secret_key,
                     region_name=self.region
                 )
-                # Проверяем подключение
-                self.s3_client.head_bucket(Bucket=self.bucket_name)
+                # Не проверяем head_bucket для B2 - некоторые ключи не имеют этого права
                 print("✅ Backblaze B2 Storage initialized successfully (boto3)")
+                print("   Note: Bucket access will be verified on first write operation")
             else:
                 # Minio клиент для других провайдеров
                 if self.endpoint:
