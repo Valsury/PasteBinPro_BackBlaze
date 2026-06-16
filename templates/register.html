@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - PasteBin Pro{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="auth-card">
+                <div class="text-center mb-4">
+                    <div class="auth-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h2 class="gradient-text mb-2">Создать аккаунт</h2>
+                    <p class="text-muted">Зарегистрируйтесь, чтобы сохранять свои пасты</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user me-2"></i>Имя пользователя
+                            </label>
+                            <input type="text" class="form-control" id="username" name="username" required
+                                   placeholder="Введите username" pattern="[a-zA-Z0-9_]{3,20}"
+                                   title="3-20 символов: буквы, цифры, подчеркивание">
+                            <div class="form-text">3-20 символов</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>Email
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" required
+                                   placeholder="your@email.com">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Пароль
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" required
+                                       placeholder="Минимум 8 символов" minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength mt-2">
+                                <div class="strength-bar">
+                                    <div class="strength-bar-fill" id="strengthBar"></div>
+                                </div>
+                                <small class="text-muted" id="strengthText">Введите пароль</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="password_confirm" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Подтвердите пароль
+                            </label>
+                            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required
+                                   placeholder="Повторите пароль">
+                            <div class="form-text" id="passwordMatch"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                        <label class="form-check-label" for="terms">
+                            Я согласен с <a href="#" class="text-decoration-none">условиями использования</a>
+                            и <a href="#" class="text-decoration-none">политикой конфиденциальности</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mb-3" id="submitBtn">
+                        <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
+                    </button>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="text-muted mb-2">Уже есть аккаунт?</p>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-sign-in-alt me-2"></i>Войти
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Demo notice -->
+                <div class="alert alert-info mt-4" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Демо-режим:</strong> Функция регистрации в разработке
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-color);
+}
+
+.auth-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-form .form-control {
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--gray-200);
+    transition: var(--transition);
+}
+
+[data-theme="dark"] .auth-form .form-control {
+    background: var(--bg-secondary);
+    border-color: var(--gray-700);
+    color: var(--text-primary);
+}
+
+.auth-form .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.15);
+}
+
+.auth-form .btn-primary {
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-weight: 600;
+    background: var(--gradient-primary);
+    border: none;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+}
+
+.auth-form .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-form .btn-outline-primary {
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-weight: 600;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    transition: var(--transition);
+}
+
+.auth-form .btn-outline-primary:hover {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.input-group .btn-outline-secondary {
+    border-radius: 0 10px 10px 0;
+    border: 2px solid var(--gray-200);
+    border-left: none;
+}
+
+[data-theme="dark"] .input-group .btn-outline-secondary {
+    background: var(--bg-secondary);
+    border-color: var(--gray-700);
+    color: var(--text-secondary);
+}
+
+.strength-bar {
+    height: 6px;
+    background: var(--gray-200);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.strength-bar-fill {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 3px;
+}
+
+.strength-weak { background: var(--danger); }
+.strength-fair { background: var(--warning); }
+.strength-good { background: var(--accent); }
+.strength-strong { background: var(--success); }
+</style>
+
+<script>
+// Toggle password visibility
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const icon = this.querySelector('i');
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+});
+
+// Password strength checker
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+
+    let strength = 0;
+    let strengthLabel = '';
+
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+    strengthBar.className = 'strength-bar-fill';
+
+    switch(strength) {
+        case 0:
+        case 1:
+            strengthBar.style.width = '25%';
+            strengthBar.classList.add('strength-weak');
+            strengthLabel = 'Слабый пароль';
+            break;
+        case 2:
+            strengthBar.style.width = '50%';
+            strengthBar.classList.add('strength-fair');
+            strengthLabel = 'Средний пароль';
+            break;
+        case 3:
+            strengthBar.style.width = '75%';
+            strengthBar.classList.add('strength-good');
+            strengthLabel = 'Хороший пароль';
+            break;
+        case 4:
+            strengthBar.style.width = '100%';
+            strengthBar.classList.add('strength-strong');
+            strengthLabel = 'Отличный пароль';
+            break;
+    }
+
+    strengthText.textContent = strengthLabel;
+});
+
+// Password match checker
+document.getElementById('password_confirm').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const passwordConfirm = this.value;
+    const matchText = document.getElementById('passwordMatch');
+
+    if (passwordConfirm.length === 0) {
+        matchText.textContent = '';
+        matchText.className = 'form-text';
+        return;
+    }
+
+    if (password === passwordConfirm) {
+        matchText.textContent = '✓ Пароли совпадают';
+        matchText.className = 'form-text text-success';
+    } else {
+        matchText.textContent = '✗ Пароли не совпадают';
+        matchText.className = 'form-text text-danger';
+    }
+});
+
+// Form validation
+document.querySelector('.auth-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const password = document.getElementById('password').value;
+    const passwordConfirm = document.getElementById('password_confirm').value;
+
+    if (password !== passwordConfirm) {
+        alert('Пароли не совпадают!');
+        return;
+    }
+
+    if (password.length < 8) {
+        alert('Пароль должен содержать минимум 8 символов!');
+        return;
+    }
+
+    // В демо-режиме просто показываем сообщение
+    alert('Демо-режим: регистрация в разработке.\n\nВаши данные:\nUsername: ' +
+          document.getElementById('username').value +
+          '\nEmail: ' + document.getElementById('email').value);
+});
+</script>
+{% endblock %}

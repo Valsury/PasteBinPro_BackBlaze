@@ -505,6 +505,66 @@ def recent_pastes():
                              category_filter='',
                              available_categories=[])
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Страница входа (пустышка)"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        remember = request.form.get('remember') == 'on'
+
+        # В демо-режиме просто показываем сообщение
+        flash('🚧 Демо-режим: функция авторизации в разработке', 'info')
+        return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Страница регистрации (пустышка)"""
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        password_confirm = request.form.get('password_confirm', '').strip()
+        terms = request.form.get('terms') == 'on'
+
+        # Базовая валидация для красоты
+        if not username or not email or not password:
+            flash('Заполните все обязательные поля', 'error')
+            return redirect(url_for('register'))
+
+        if password != password_confirm:
+            flash('Пароли не совпадают', 'error')
+            return redirect(url_for('register'))
+
+        if len(password) < 8:
+            flash('Пароль должен содержать минимум 8 символов', 'error')
+            return redirect(url_for('register'))
+
+        if not terms:
+            flash('Необходимо согласиться с условиями использования', 'error')
+            return redirect(url_for('register'))
+
+        # В демо-режиме просто показываем сообщение
+        flash('🚧 Демо-режим: функция регистрации в разработке', 'info')
+        flash(f'Ваши данные сохранены: {username} ({email})', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    """Выход из системы (пустышка)"""
+    flash('Вы успешно вышли из системы', 'success')
+    return redirect(url_for('index'))
+
+@app.route('/profile')
+def profile():
+    """Страница профиля пользователя (пустышка)"""
+    # В демо-режиме показываем шаблон профиля
+    return render_template('profile.html')
+
 @app.route('/ai')
 def ai_helper_page():
     """Страница AI-помощника"""

@@ -837,6 +837,48 @@
             color: white;
         }
 
+        /* Кнопки авторизации в навигации */
+        .auth-btn {
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px !important;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .auth-btn.btn-outline-primary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .auth-btn.btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .auth-btn.btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+        }
+
+        .auth-btn.btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Адаптивность для кнопок авторизации */
+        @media (max-width: 991px) {
+            .auth-btn {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+        }
+
         .btn-primary:hover {
             background: var(--gradient-primary);
             color: white;
@@ -1442,12 +1484,22 @@
                         </a>
                     </li>
                 </ul>
-                <div class="theme-toggle-wrapper ms-3">
-                    <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
-                        <div class="theme-toggle-slider">
-                            <i class="fas fa-sun theme-toggle-icon"></i>
-                        </div>
-                    </button>
+
+                <!-- Кнопки авторизации -->
+                <div class="d-flex align-items-center ms-3 gap-2">
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm auth-btn">
+                        <i class="fas fa-sign-in-alt me-2"></i>Вход
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm auth-btn">
+                        <i class="fas fa-user-plus me-2"></i>Регистрация
+                    </a>
+                    <div class="theme-toggle-wrapper ms-2">
+                        <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+                            <div class="theme-toggle-slider">
+                                <i class="fas fa-sun theme-toggle-icon"></i>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
