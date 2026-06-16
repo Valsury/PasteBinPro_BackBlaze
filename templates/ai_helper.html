@@ -30,10 +30,11 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-body text-center">
-                                <label for="model-select" class="form-label">Выберите модель</label>
+                                <label for="model-select" class="form-label">Выберите модель 🆓</label>
                                 <select class="form-select" id="model-select">
                                     <option value="">Загрузка моделей...</option>
                                 </select>
+                                <small class="text-muted">Все модели доступны бесплатно</small>
                             </div>
                         </div>
                     </div>
@@ -297,7 +298,32 @@ async function loadModels() {
         data.models.forEach(model => {
             const option = document.createElement('option');
             option.value = model;
-            option.textContent = model;
+            
+            // Формируем отображаемое имя модели
+            let displayName = model;
+            
+            // Все модели в списке теперь гарантированно бесплатные
+            // Форматируем отображение
+            if (model.includes(':free')) {
+                // Модели с тегом :free
+                const modelName = model.split(':')[0].split('/').pop();
+                displayName = `${modelName} 🆓`;
+            } else if (model.includes('mistralai/mistral-7b-instruct') ||
+                      model.includes('google/gemini-flash-1.5') ||
+                      model.includes('meta-llama/llama-3-8b-instruct')) {
+                // Гарантированно бесплатные модели
+                const modelName = model.split('/').pop();
+                displayName = `${modelName} 🆓`;
+            } else if (model.includes('openrouter/free')) {
+                // Специальный маршрутизатор бесплатных моделей
+                displayName = 'OpenRouter Free Router 🆓';
+            } else {
+                // Все остальные модели в списке также бесплатные
+                const modelName = model.split('/').pop();
+                displayName = `${modelName} 🆓`;
+            }
+            
+            option.textContent = displayName;
             if (model === data.current) {
                 option.selected = true;
             }

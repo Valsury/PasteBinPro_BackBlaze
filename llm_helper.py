@@ -13,7 +13,13 @@ class UniversalLLMHelper:
         # Определяем провайдера из переменных окружения
         self.provider = os.getenv('LLM_PROVIDER', 'openrouter').lower()
         self.api_key = os.getenv('LLM_API_KEY', '')
-        self.model = os.getenv('LLM_MODEL', 'mistralai/mistral-7b-instruct')
+        
+        # Устанавливаем модель по умолчанию (бесплатная для OpenRouter)
+        default_model = os.getenv('LLM_MODEL', 'mistralai/mistral-7b-instruct')
+        if self.provider == 'openrouter' and not default_model.startswith('mistralai/'):
+            # Если указана не бесплатная модель, используем бесплатную по умолчанию
+            default_model = 'mistralai/mistral-7b-instruct'
+        self.model = default_model
 
         # Настройки для разных провайдеров
         self.provider_configs = {
@@ -91,30 +97,152 @@ class UniversalLLMHelper:
         if self.available_models:
             return self.available_models
 
-        try:
-            if not self.config['models_endpoint']:
-                return [self.model]
+        # Для OpenRouter возвращаем только бесплатные модели
+        if self.provider == 'openrouter':
+            # Основные бесплатные модели, которые всегда должны быть в списке
+            default_free_models = [
+                'mistralai/mistral-7b-instruct',
+                'google/gemini-flash-1.5', 
+                'meta-llama/llama-3-8b-instruct'
+            ]
+            
+            # Модели, которые гарантированно бесплатные (без :free тега)
+            # Внимание: этот список должен быть очень строгим
+            # Только модели, которые известны как всегда бесплатные
+            guaranteed_free_models = [
+                'mistralai/mistral-7b-instruct',
+                'google/gemini-flash-1.5',
+                'meta-llama/llama-3-8b-instruct'
+            ]
+            
+            # Ключевые слова для бесплатных моделей
+            free_model_keywords = [
+                ':free',  # Основной маркер бесплатных моделей в OpenRouter
+                'free',   # Альтернативный маркер
+            ]
+            
+            # Исключения: модели, которые НЕ бесплатные даже если содержат ключевые слова
+            paid_exceptions = [
+                'mistralai/mistral-large',
+                'mistralai/mistral-medium-',
+                'mistralai/mistral-small-',
+                'mistralai/mistral-saba',
+                'mistralai/mistral-nemo',
+                'mistralai/mistral-large-',
+                'mistralai/mistral-medium-',
+                'mistralai/mistral-small-'
+            ]
+            
+            try:
+                url = f"{self.config['base_url']}{self.config['models_endpoint']}"
+                response = requests.get(url, headers=self.config['headers'], timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'data' in data:
+                        # Получаем все модели из API
+                        all_models = [model['id'] for model in data['data']]
+                        
+                        # Фильтруем только действительно бесплатные моде��и
+                        filtered_models = []
+                        for model in all_models:
+                            model_lower = model.lower()
+                            
+                            # Проверяем, является ли модель гарантированно бесплатной
+                            if model in guaranteed_free_models:
+                                filtered_models.append(model)
+                                continue
+                            
+                            # Проверяем наличие тега :free
+                            if ':free' in model:
+                                filtered_models.append(model)
+                                continue
+                            
+                            # Проверяем ключевые слова, но исключаем платные исключения
+                            has_free_keyword = any(keyword in model_lower for keyword in free_model_keywords)
+                            is_paid_exception = any(exception in model for exception in paid_exceptions)
+                            
+                            # Принимаем модель только если она гарантированно бесплатная или имеет тег :free
+                            if has_free_keyword:
+                                filtered_models.append(model)
+                        
+                        # Удаляем дубликаты и объединяем с дефолтными моделями
+                        combined_models = list(dict.fromkeys(default_free_models + filtered_models))
+                        
+                        # Сортируем модели для удобства (сначала с :free, затем по алфавиту)
+                        def sort_key(model_name):
+                            score = 0
+                            if ':free' in model_name:
+                                score -= 2  # Сначала модели с :free
+                            if model_name in default_free_models:
+                                score -= 1  # Затем дефолтные
+                            return (score, model_name.lower())
+                        
+                        self.available_models = sorted(combined_models, key=sort_key)
+                        
+                    else:
+                        # Если не получилось получить список, используем дефолтные
+                        self.available_models = default_free_models
+                else:
+                    # Если API недоступно, используем дефолтные
+                    self.available_models = default_free_models
+                    
+            except Exception as e:
+                print(f"❌ Ошибка получения списка моделей OpenRouter: {e}")
+                self.available_models = default_free_models
+        
+        # Для других провайдеров возвращаем только текущую модель
+        else:
+            try:
+                if not self.config['models_endpoint']:
+                    return [self.model]
 
-            url = f"{self.config['base_url']}{self.config['models_endpoint']}"
-            response = requests.get(url, headers=self.config['headers'], timeout=10)
+                url = f"{self.config['base_url']}{self.config['models_endpoint']}"
+                response = requests.get(url, headers=self.config['headers'], timeout=10)
 
-            if response.status_code == 200:
-                data = response.json()
-                if 'data' in data:
-                    self.available_models = [model['id'] for model in data['data']]
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'data' in data:
+                        self.available_models = [model['id'] for model in data['data']]
+                    else:
+                        self.available_models = [self.model]
                 else:
                     self.available_models = [self.model]
-            else:
-                self.available_models = [self.model]
 
-        except Exception as e:
-            print(f"❌ Ошибка получения списка моделей: {e}")
-            self.available_models = [self.model]
+            except Exception as e:
+                print(f"❌ Ошибка получения списка моделей: {e}")
+                self.available_models = [self.model]
 
         return self.available_models
 
     def set_model(self, model_name: str) -> bool:
         """Устанавливает активную модель"""
+        # Для OpenRouter проверяем, что модель бесплатная
+        if self.provider == 'openrouter':
+            free_models = self.get_available_models()
+            if model_name not in free_models:
+                print(f"⚠️ Модель '{model_name}' не доступна в бесплатных моделях")
+                print(f"Доступные бесплатные модели: {free_models}")
+                
+                # Проверяем, может быть это короткое имя модели (только последняя часть)
+                model_short = model_name.split('/')[-1] if '/' in model_name else model_name
+                for available_model in free_models:
+                    if model_short in available_model:
+                        self.model = available_model
+                        print(f"✅ Найдена похожая модель: {self.model}")
+                        return True
+                
+                # Если модель не найдена в бесплатных, используем первую бесплатную
+                if free_models:
+                    self.model = free_models[0]
+                    print(f"✅ Автоматически выбрана первая доступная модель: {self.model}")
+                    return True
+                else:
+                    # Если нет бесплатных моделей, используем базовую
+                    self.model = 'mistralai/mistral-7b-instruct'
+                    print(f"✅ Автоматически выбрана базовая модель: {self.model}")
+                    return True
+        
         self.model = model_name
         print(f"✅ Модель изменена на: {self.model}")
         return True
