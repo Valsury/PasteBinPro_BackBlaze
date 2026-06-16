@@ -1,0 +1,269 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Дашборд - Админ-панель - PasteBin Pro{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="mb-3"><i class="fas fa-tachometer-alt me-2"></i>Дашборд</h2>
+    <p class="text-muted">Обзор статистики и управления системой</p>
+</div>
+
+<!-- Статистика в карточках -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="admin-card p-3 admin-stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Пользователи</h5>
+                    <h2 class="mb-0">{{ total_users }}</h2>
+                    <small class="opacity-75">Всего зарегистрировано</small>
+                </div>
+                <div class="admin-user-avatar">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="admin-card p-3" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Пасты</h5>
+                    <h2 class="mb-0">{{ total_pastes }}</h2>
+                    <small class="opacity-75">Активные сейчас</small>
+                </div>
+                <div class="admin-user-avatar" style="background: rgba(255,255,255,0.2);">
+                    <i class="fas fa-paste"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="admin-card p-3" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Всего паст</h5>
+                    <h2 class="mb-0">{{ total_pastes_ever }}</h2>
+                    <small class="opacity-75">За все время</small>
+                </div>
+                <div class="admin-user-avatar" style="background: rgba(255,255,255,0.2);">
+                    <i class="fas fa-history"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="admin-card p-3" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Администраторы</h5>
+                    <h2 class="mb-0">{{ recent_users|selectattr('is_admin')|list|length }}</h2>
+                    <small class="opacity-75">С правами админа</small>
+                </div>
+                <div class="admin-user-avatar" style="background: rgba(255,255,255,0.2);">
+                    <i class="fas fa-crown"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Последние пользователи -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Последние пользователи</h5>
+                <a href="/admin/users" class="btn btn-sm btn-outline-primary">Все пользователи</a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Пользователь</th>
+                            <th>Email</th>
+                            <th>Регистрация</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="admin-user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                        {{ user.username[0]|upper }}
+                                    </div>
+                                    {{ user.username }}
+                                    {% if user.is_admin %}
+                                        <span class="badge bg-warning ms-2">Админ</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Активен</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Неактивен</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Последние пасты -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-file-code me-2"></i>Последние пасты</h5>
+                <a href="/admin/pastes" class="btn btn-sm btn-outline-primary">Все пасты</a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Язык</th>
+                            <th>Автор</th>
+                            <th>Создана</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paste in recent_pastes %}
+                        <tr>
+                            <td>
+                                <a href="/paste/{{ paste.id }}" class="text-decoration-none" target="_blank">
+                                    {{ paste.title[:30] }}{% if paste.title|length > 30 %}...{% endif %}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ paste.language }}</span>
+                            </td>
+                            <td>
+                                {% if paste.author %}
+                                    {{ paste.author.username }}
+                                {% else %}
+                                    <span class="text-muted">Аноним</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ paste.created_at.strftime('%H:%M %d.%m') }}</td>
+                            <td>
+                                {% if paste.is_expired %}
+                                    <span class="badge bg-danger">Истекла</span>
+                                {% elif paste.is_private %}
+                                    <span class="badge bg-warning">Приватная</span>
+                                {% else %}
+                                    <span class="badge bg-success">Активна</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Статистика по языкам -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-card p-3">
+            <h5 class="mb-3"><i class="fas fa-code me-2"></i>Статистика по языкам</h5>
+            
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Язык</th>
+                            <th>Количество</th>
+                            <th>Процент</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lang, count in language_stats %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-primary">{{ lang }}</span>
+                            </td>
+                            <td>{{ count }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                        <div class="progress-bar" 
+                                             style="width: {{ (count / total_pastes * 100) if total_pastes > 0 else 0 }}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-muted small">
+                                        {{ "%.1f"|format((count / total_pastes * 100) if total_pastes > 0 else 0) }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Быстрые действия -->
+    <div class="col-lg-6 mb-4">
+        <div class="admin-card p-3">
+            <h5 class="mb-3"><i class="fas fa-bolt me-2"></i>Быстрые действия</h5>
+            
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <a href="/" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-home me-2"></i>На главную
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="/create" class="btn btn-outline-success w-100 mb-2">
+                        <i class="fas fa-plus me-2"></i>Создать пасту
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="/ai" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-robot me-2"></i>AI помощник
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="/profile" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="fas fa-user me-2"></i>Мой профиль
+                    </a>
+                </div>
+            </div>
+            
+            <hr class="my-3">
+            
+            <h6 class="mb-2"><i class="fas fa-shield-alt me-2"></i>Админ-инструменты</h6>
+            
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <button class="btn btn-warning w-100 mb-2" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Обновить данные
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-danger w-100 mb-2" disabled>
+                        <i class="fas fa-trash me-2"></i>Очистить старые
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

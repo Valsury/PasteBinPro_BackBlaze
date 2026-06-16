@@ -129,11 +129,12 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False)
     
     pastes = db.relationship('Paste', backref='author', lazy=True)
     
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f'<User {self.username} {"(admin)" if self.is_admin else ""}>'
 
 class Tag(db.Model):
     __tablename__ = 'tags'

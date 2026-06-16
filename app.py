@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 import json
 import os
 import hashlib
@@ -15,6 +15,7 @@ import base64
 from models import db, Paste, User, Tag, AppStats
 from storage import MinioStorage
 from config import get_config
+from admin_helpers import admin_required
 
 app = Flask(__name__)
 
@@ -51,7 +52,7 @@ def verify_password(password, hashed_password):
     return password_hash == stored_hash
 
 # Текущая сессия (упрощенная версия)
-current_user = {'logged_in': False, 'username': None, 'email': None}
+current_user = {'logged_in': False, 'username': None, 'email': None, 'is_admin': False}
 
 # Регистрируем фильтр nl2br для преобразования переносов строк в HTML
 @app.template_filter('nl2br')
@@ -64,6 +65,13 @@ def nl2br_filter(text):
 # Контекстный процессор для передачи current_user в шаблоны
 @app.context_processor
 def inject_user():
+    # Восстанавливаем состояние пользователя из сессии Flask при необходимости
+    if not current_user['logged_in'] and session.get('user_logged_in'):
+        current_user['logged_in'] = session.get('user_logged_in', False)
+        current_user['username'] = session.get('user_username')
+        current_user['email'] = session.get('user_email')
+        current_user['is_admin'] = session.get('user_is_admin', False)
+    
     return dict(current_user=current_user)
 
 def cleanup_expired_pastes():
@@ -542,14 +550,75 @@ def login():
 
         # Ищем пользователя по email или username
         from models import User
-        user = User.query.filter((User.email == email_or_username) | (User.username == email_or_username)).first()
+        try:
+            user = User.query.filter((User.email == email_or_username) | (User.username == email_or_username)).first()
+        except Exception as e:
+            # Если есть ошибка с полем is_admin (поле еще не добавлено в БД)
+            if 'is_admin' in str(e):
+                print(f"⚠️ Внимание: поле is_admin еще не добавлено в базу данных: {e}")
+                # Пробуем получить пользователя без поля is_admin
+                from sqlalchemy import text
+                from models import db
+                
+                # Используем raw SQL для получения пользователя
+                sql = text("""
+                    SELECT id, username, email, password_hash, is_active, created_at
+                    FROM users 
+                    WHERE email = :email OR username = :username
+                    LIMIT 1
+                """)
+                
+                result = db.session.execute(sql, {
+                    'email': email_or_username,
+                    'username': email_or_username
+                }).fetchone()
+                
+                if result:
+                    # Создаем временный объект пользователя
+                    class TempUser:
+                        def __init__(self, row):
+                            self.id = row[0]
+                            self.username = row[1]
+                            self.email = row[2]
+                            self.password_hash = row[3]
+                            self.is_active = row[4]
+                            self.created_at = row[5]
+                            self.is_admin = False  # По умолчанию не администратор
+                    
+                    user = TempUser(result)
+                else:
+                    user = None
+            else:
+                # Другая ошибка - пробрасываем дальше
+                raise
         
         if user and verify_password(password, user.password_hash):
-            # Успешный вход
+            # Успешный вход - обновляем текущую сессию
             current_user['logged_in'] = True
             current_user['username'] = user.username
             current_user['email'] = user.email
-            flash(f'Добро пожаловать, {user.username}!', 'success')
+            
+            # Безопасно получаем is_admin (может отсутствовать)
+            try:
+                is_admin = getattr(user, 'is_admin', False)
+            except:
+                is_admin = False
+                
+            current_user['is_admin'] = is_admin
+            
+            # Сохраняем в сессии Flask для admin_required
+            session['user_logged_in'] = True
+            session['user_username'] = user.username
+            session['user_email'] = user.email
+            session['user_is_admin'] = is_admin
+            session['user_id'] = getattr(user, 'id', None)
+            
+            # Специальное сообщение для администратора
+            if is_admin:
+                flash(f'Добро пожаловать, АДМИНИСТРАТОР {user.username}!', 'success')
+            else:
+                flash(f'Добро пожаловать, {user.username}!', 'success')
+            
             return redirect(url_for('profile'))
         else:
             flash('Неверный логин или пароль', 'error')
@@ -616,9 +685,19 @@ def register():
 @app.route('/logout')
 def logout():
     """Выход из системы"""
+    # Очищаем текущую сессию
     current_user['logged_in'] = False
     current_user['username'] = None
     current_user['email'] = None
+    current_user['is_admin'] = False
+    
+    # Очищаем сессию Flask
+    session.pop('user_logged_in', None)
+    session.pop('user_username', None)
+    session.pop('user_email', None)
+    session.pop('user_is_admin', None)
+    session.pop('user_id', None)
+    
     flash('Вы успешно вышли из системы', 'success')
     return redirect(url_for('index'))
 
@@ -630,6 +709,85 @@ def profile():
         return redirect(url_for('login'))
 
     return render_template('profile.html', user=current_user)
+
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    """Административная панель"""
+    # Получаем статистику
+    total_users = User.query.count()
+    total_pastes = Paste.query.count()
+    total_pastes_ever = get_or_create_stat('total_pastes_ever', 0)
+    
+    # Получаем последние 10 пользователей
+    recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
+    
+    # Получаем последние 10 паст
+    recent_pastes = Paste.query.order_by(Paste.created_at.desc()).limit(10).all()
+    
+    # Получаем статистику по языкам
+    from sqlalchemy import func
+    language_stats = db.session.query(
+        Paste.language, func.count(Paste.id).label('count')
+    ).group_by(Paste.language).order_by(func.count(Paste.id).desc()).all()
+    
+    return render_template('admin_panel.html',
+                         user=current_user,
+                         total_users=total_users,
+                         total_pastes=total_pastes,
+                         total_pastes_ever=total_pastes_ever,
+                         recent_users=recent_users,
+                         recent_pastes=recent_pastes,
+                         language_stats=language_stats)
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    """Управление пользователями"""
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin_users.html', users=users, user=current_user)
+
+@app.route('/admin/pastes')
+@admin_required
+def admin_pastes():
+    """Управление пастами"""
+    pastes = Paste.query.order_by(Paste.created_at.desc()).all()
+    return render_template('admin_pastes.html', pastes=pastes, user=current_user)
+
+@app.route('/admin/stats')
+@admin_required
+def admin_stats():
+    """Статистика системы"""
+    # Основная статистика
+    total_users = User.query.count()
+    total_pastes = Paste.query.count()
+    total_pastes_ever = get_or_create_stat('total_pastes_ever', 0)
+    
+    # Статистика по дням (последние 7 дней)
+    from sqlalchemy import func, cast, Date
+    daily_stats = db.session.query(
+        cast(Paste.created_at, Date).label('date'),
+        func.count(Paste.id).label('count')
+    ).group_by(cast(Paste.created_at, Date)).order_by(cast(Paste.created_at, Date).desc()).limit(7).all()
+    
+    # Статистика по языкам
+    language_stats = db.session.query(
+        Paste.language, func.count(Paste.id).label('count')
+    ).group_by(Paste.language).order_by(func.count(Paste.id).desc()).all()
+    
+    # Статистика по времени жизни
+    lifetime_stats = db.session.query(
+        Paste.lifetime, func.count(Paste.id).label('count')
+    ).group_by(Paste.lifetime).order_by(Paste.lifetime).all()
+    
+    return render_template('admin_stats.html',
+                         user=current_user,
+                         total_users=total_users,
+                         total_pastes=total_pastes,
+                         total_pastes_ever=total_pastes_ever,
+                         daily_stats=daily_stats,
+                         language_stats=language_stats,
+                         lifetime_stats=lifetime_stats)
 
 @app.route('/ai')
 def ai_helper_page():
@@ -1101,6 +1259,182 @@ def secret_paste_qr_code(secret_key):
         print(f"Ошибка при генерации QR-кода для приватной пасты: {e}")
         return jsonify({'error': 'Ошибка при генерации QR-кода'}), 500
 
+def apply_admin_migration():
+    """Применяет миграцию для добавления поля is_admin при запуске"""
+    print("\n🔧 НАДЕЖНАЯ МИГРАЦИЯ ДЛЯ ПОЛЯ IS_ADMIN")
+    print("-" * 50)
+    
+    try:
+        from sqlalchemy import text
+        
+        # Шаг 1: Проверяем и добавляем поле is_admin
+        print("📝 ШАГ 1: Проверка поля is_admin в таблице users")
+        
+        # Используем надежный подход с несколькими fallback
+        migration_success = False
+        
+        # Способ 1: Пробуем информацию о схеме
+        try:
+            result = db.session.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'is_admin'
+            """)).fetchone()
+            
+            if result:
+                print("✅ Поле is_admin уже существует в таблице users")
+                migration_success = True
+            else:
+                print("❌ Поле is_admin НЕ найдено в таблице users")
+                migration_success = False
+                
+        except Exception as e:
+            print(f"⚠️ Не удалось проверить через information_schema: {e}")
+            migration_success = False
+        
+        # Если поле не найдено, добавляем его
+        if not migration_success:
+            print("📝 Добавляю поле is_admin...")
+            
+            # Пробуем несколько способов добавления поля
+            add_methods = [
+                # Способ 1: С IF NOT EXISTS (PostgreSQL)
+                ("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE", "IF NOT EXISTS"),
+                # Способ 2: Простое добавление
+                ("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE", "простое добавление"),
+            ]
+            
+            for sql_query, method_name in add_methods:
+                try:
+                    db.session.execute(text(sql_query))
+                    db.session.commit()
+                    print(f"✅ Поле is_admin успешно добавлено (способ: {method_name})!")
+                    migration_success = True
+                    break
+                except Exception as e:
+                    if "already exists" in str(e).lower() or "duplicate column" in str(e).lower():
+                        print(f"✅ Поле is_admin уже существует (способ: {method_name})")
+                        migration_success = True
+                        break
+                    else:
+                        print(f"⚠️ Способ {method_name} не сработал: {e}")
+            
+            if not migration_success:
+                print("❌ Не удалось добавить поле is_admin всеми способами")
+                return False
+        
+        # Шаг 2: Проверяем и создаем администратора
+        print("\n📝 ШАГ 2: Создание/проверка администратора admin/admin")
+        
+        # Проверяем существование пользователя admin
+        admin_exists = db.session.execute(
+            text("SELECT username FROM users WHERE username = 'admin'")
+        ).fetchone()
+        
+        if not admin_exists:
+            print("👑 Создаю администратора admin/admin...")
+            
+            password_hash = hash_password('admin')
+            
+            # Пробуем создать с полем is_admin
+            try:
+                db.session.execute(text("""
+                    INSERT INTO users (username, email, password_hash, is_active, is_admin, created_at) 
+                    VALUES ('admin', 'admin@localhost', :password_hash, true, true, NOW())
+                """), {'password_hash': password_hash})
+                db.session.commit()
+                print("✅ Администратор успешно создан (с полем is_admin)!")
+                print(f"   Логин: admin | Пароль: admin | Email: admin@localhost")
+            except Exception as e:
+                print(f"⚠️ Ошибка при создании с полем is_admin: {e}")
+                print("📝 Пробую создать без поля is_admin...")
+                
+                try:
+                    db.session.execute(text("""
+                        INSERT INTO users (username, email, password_hash, is_active, created_at) 
+                        VALUES ('admin', 'admin@localhost', :password_hash, true, NOW())
+                    """), {'password_hash': password_hash})
+                    db.session.commit()
+                    print("✅ Администратор создан (без поля is_admin)!")
+                    
+                    # Обновляем до администратора
+                    db.session.execute(text("""
+                        UPDATE users 
+                        SET is_admin = true 
+                        WHERE username = 'admin'
+                    """))
+                    db.session.commit()
+                    print("✅ Пользователь admin обновлен до администратора!")
+                except Exception as e2:
+                    print(f"❌ Ошибка при создании администратора: {e2}")
+                    return False
+        else:
+            print("ℹ️ Пользователь admin уже существует")
+            
+            # Проверяем, является ли администратором
+            try:
+                result = db.session.execute(text("""
+                    SELECT is_admin FROM users WHERE username = 'admin'
+                """)).fetchone()
+                
+                if result and result[0]:
+                    print("✅ Пользователь admin уже является администратором")
+                else:
+                    print("⚠️ Пользователь admin НЕ является администратором")
+                    print("📝 Обновляю до администратора...")
+                    
+                    db.session.execute(text("""
+                        UPDATE users 
+                        SET is_admin = true 
+                        WHERE username = 'admin'
+                    """))
+                    db.session.commit()
+                    print("✅ Пользователь admin обновлен до администратора!")
+            except Exception as e:
+                print(f"⚠️ Ошибка при проверке статуса администратора: {e}")
+                print("📝 Предполагаю, что пользователь не администратор и обновляю...")
+                
+                try:
+                    db.session.execute(text("""
+                        UPDATE users 
+                        SET is_admin = true 
+                        WHERE username = 'admin'
+                    """))
+                    db.session.commit()
+                    print("✅ Пользователь admin обновлен до администратора!")
+                except Exception as e2:
+                    print(f"⚠️ Не удалось обновить до администратора: {e2}")
+        
+        # Шаг 3: Финальная проверка
+        print("\n📝 ШАГ 3: Финальная проверка")
+        
+        try:
+            admins = db.session.execute(text("""
+                SELECT username, email, is_admin 
+                FROM users 
+                WHERE is_admin = true 
+                ORDER BY created_at
+            """)).fetchall()
+            
+            if admins:
+                print("📋 Список администраторов:")
+                for admin in admins:
+                    status = "администратор" if admin[2] else "обычный пользователь"
+                    print(f"   • {admin[0]} ({admin[1]}) - {status}")
+            else:
+                print("ℹ️ В базе нет пользователей с is_admin = true")
+        except Exception as e:
+            print(f"⚠️ Не удалось получить список администраторов: {e}")
+        
+        print("\n✅ МИГРАЦИЯ ЗАВЕРШЕНА УСПЕШНО!")
+        return True
+        
+    except Exception as e:
+        print(f"\n❌ КРИТИЧЕСКАЯ ОШИБКА: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 if __name__ == '__main__':
     with app.app_context():
         # Применяем миграцию timezone автоматически при старте
@@ -1145,12 +1479,297 @@ if __name__ == '__main__':
         # Создаем таблицы если их нет
         db.create_all()
         print("База данных инициализирована")
+        
+        # Применяем миграцию для поля is_admin
+        apply_admin_migration()
 
         # Инициализируем счетчик общего количества паст, если его нет
         current_total = Paste.query.count()
         if current_total > 0:
             get_or_create_stat('total_pastes_ever', current_total)
             print(f"Счетчик общего количества паст инициализирован: {current_total}")
+        
+        # Проверяем и создаем администратора admin/admin если его нет
+        from models import User
+        from sqlalchemy import text
+        
+        # Всегда используем безопасный подход с raw SQL сначала, чтобы избежать ошибок с полем is_admin
+        print("\n🔍 Проверяем существование пользователя admin...")
+        
+        # Определяем структуру таблицы users (сколько колонок ожидаем)
+        try:
+            # Сначала пытаемся узнать структуру таблицы
+            sql_columns = text("""
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' 
+                ORDER BY ordinal_position
+            """)
+            columns_result = db.session.execute(sql_columns).fetchall()
+            
+            if columns_result:
+                column_names = [col[0] for col in columns_result]
+                print(f"   Структура таблицы users: {column_names}")
+                
+                # Строим SQL запрос в зависимости от структуры таблицы
+                if 'is_admin' in column_names:
+                    # Таблица содержит поле is_admin
+                    sql = text("SELECT * FROM users WHERE username = 'admin' LIMIT 1")
+                    result = db.session.execute(sql).fetchone()
+                    
+                    if result:
+                        # Создаем объект пользователя с полем is_admin
+                        admin_user = User()
+                        admin_user.id = result[0]
+                        admin_user.username = result[1]
+                        admin_user.email = result[2]
+                        admin_user.password_hash = result[3]
+                        admin_user.is_active = result[4]
+                        admin_user.created_at = result[5]
+                        admin_user.is_admin = result[6]
+                        print("✅ Пользователь admin найден (с полем is_admin)")
+                    else:
+                        admin_user = None
+                        print("ℹ️ Пользователь admin не найден")
+                else:
+                    # Таблица НЕ содержит поле is_admin
+                    print("⚠️ Таблица users НЕ содержит поле is_admin")
+                    
+                    # Выполняем запрос без поля is_admin
+                    sql = text("SELECT id, username, email, password_hash, is_active, created_at FROM users WHERE username = 'admin' LIMIT 1")
+                    result = db.session.execute(sql).fetchone()
+                    
+                    if result:
+                        # Создаем временный объект пользователя без поля is_admin
+                        class TempUser:
+                            def __init__(self, row):
+                                self.id = row[0]
+                                self.username = row[1]
+                                self.email = row[2]
+                                self.password_hash = row[3]
+                                self.is_active = row[4]
+                                self.created_at = row[5]
+                                self.is_admin = False  # По умолчанию не администратор
+                        
+                        admin_user = TempUser(result)
+                        print("✅ Пользователь admin найден (без поля is_admin)")
+                    else:
+                        admin_user = None
+                        print("ℹ️ Пользователь admin не найден")
+            else:
+                # Не удалось получить структуру таблицы
+                print("⚠️ Не удалось получить структуру таблицы users")
+                admin_user = None
+                
+        except Exception as e:
+            print(f"⚠️ Ошибка при проверке структуры таблицы: {e}")
+            # Пробуем простой запрос как fallback
+            try:
+                sql = text("SELECT * FROM users WHERE username = 'admin' LIMIT 1")
+                result = db.session.execute(sql).fetchone()
+                
+                if result:
+                    # Пытаемся создать объект пользователя, предполагая наличие 7 колонок (с is_admin)
+                    try:
+                        admin_user = User()
+                        admin_user.id = result[0]
+                        admin_user.username = result[1]
+                        admin_user.email = result[2]
+                        admin_user.password_hash = result[3]
+                        admin_user.is_active = result[4]
+                        admin_user.created_at = result[5]
+                        admin_user.is_admin = result[6]
+                        print("✅ Пользователь admin найден (предполагаем наличие is_admin)")
+                    except:
+                        # Если не получается, создаем временный объект
+                        class TempUser:
+                            def __init__(self, row):
+                                self.id = row[0] if len(row) > 0 else None
+                                self.username = row[1] if len(row) > 1 else None
+                                self.email = row[2] if len(row) > 2 else None
+                                self.password_hash = row[3] if len(row) > 3 else None
+                                self.is_active = row[4] if len(row) > 4 else True
+                                self.created_at = row[5] if len(row) > 5 else None
+                                self.is_admin = False  # По умолчанию не администратор
+                        
+                        admin_user = TempUser(result)
+                        print("✅ Пользователь admin найден (временный объект)")
+                else:
+                    admin_user = None
+                    print("ℹ️ Пользователь admin не найден")
+            except Exception as e2:
+                print(f"❌ Ошибка при поиске пользователя admin: {e2}")
+                admin_user = None
+        
+        if not admin_user:
+            print("\n👑 Создаем администратора admin/admin...")
+            
+            # Всегда используем SQL для создания, чтобы избежать проблем с моделью
+            print("   Использую SQL запрос для создания администратора...")
+            
+            password_hash = hash_password('admin')
+            
+            # Сначала проверяем, есть ли поле is_admin
+            try:
+                # Пробуем добавить пользователя с полем is_admin
+                sql_with_admin = text("""
+                    INSERT INTO users (username, email, password_hash, is_active, is_admin, created_at) 
+                    VALUES ('admin', 'admin@localhost', :password_hash, true, true, NOW())
+                """)
+                db.session.execute(sql_with_admin, {'password_hash': password_hash})
+                db.session.commit()
+                
+                print("✅ Администратор успешно создан (с полем is_admin)!")
+                print(f"   Логин: admin")
+                print(f"   Пароль: admin")
+                print(f"   Email: admin@localhost")
+                
+            except Exception as e:
+                # Если не получается с is_admin, пробуем без него
+                if 'is_admin' in str(e).lower() or 'column' in str(e).lower():
+                    print("⚠️ Не удалось создать с полем is_admin")
+                    print("   Пробую создать без поля is_admin...")
+                    
+                    try:
+                        sql_without_admin = text("""
+                            INSERT INTO users (username, email, password_hash, is_active, created_at) 
+                            VALUES ('admin', 'admin@localhost', :password_hash, true, NOW())
+                        """)
+                        db.session.execute(sql_without_admin, {'password_hash': password_hash})
+                        db.session.commit()
+                        
+                        print("✅ Администратор успешно создан (без поля is_admin)!")
+                        print(f"   Логин: admin")
+                        print(f"   Пароль: admin")
+                        print(f"   Email: admin@localhost")
+                        
+                        # Теперь пытаемся добавить поле is_admin для этого пользователя
+                        print("   Пробую добавить поле is_admin для пользователя admin...")
+                        try:
+                            # Сначала добавляем поле, если его нет
+                            db.session.execute(text("""
+                                ALTER TABLE users 
+                                ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE
+                            """))
+                            
+                            # Обновляем пользователя admin до администратора
+                            db.session.execute(text("""
+                                UPDATE users 
+                                SET is_admin = true 
+                                WHERE username = 'admin'
+                            """))
+                            db.session.commit()
+                            print("✅ Пользователь admin теперь администратор!")
+                        except Exception as e2:
+                            print(f"⚠️ Не удалось обновить до администратора: {e2}")
+                        
+                    except Exception as e2:
+                        print(f"❌ Ошибка при создании администратора: {e2}")
+                else:
+                    print(f"❌ Ошибка при создании администратора: {e}")
+        else:
+            # Проверяем, является ли пользователь администратором
+            try:
+                is_admin = getattr(admin_user, 'is_admin', False)
+                
+                if not is_admin:
+                    print("\n👑 Обновляем пользователя admin до администратора...")
+                    
+                    # Пробуем обновить через SQL напрямую
+                    try:
+                        # Сначала добавляем поле, если его нет
+                        db.session.execute(text("""
+                            ALTER TABLE users 
+                            ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE
+                        """))
+                        
+                        # Обновляем пользователя admin до администратора
+                        db.session.execute(text("""
+                            UPDATE users 
+                            SET is_admin = true 
+                            WHERE username = 'admin'
+                        """))
+                        db.session.commit()
+                        
+                        print("✅ Пользователь admin обновлен до администратора!")
+                    except Exception as e:
+                        if 'already exists' in str(e).lower() or 'duplicate column' in str(e).lower():
+                            # Поле уже существует, пробуем просто обновить
+                            try:
+                                db.session.execute(text("""
+                                    UPDATE users 
+                                    SET is_admin = true 
+                                    WHERE username = 'admin'
+                                """))
+                                db.session.commit()
+                                print("✅ Пользователь admin обновлен до администратора!")
+                            except Exception as e2:
+                                print(f"⚠️ Не удалось обновить до администратора: {e2}")
+                        else:
+                            print(f"⚠️ Не удалось обновить до администратора: {e}")
+                else:
+                    print("✅ Администратор admin уже существует")
+                    
+            except Exception as e:
+                print(f"⚠️ Не удалось проверить статус администратора: {e}")
+                
+                # Пробуем проверить через SQL запрос
+                try:
+                    sql_check = text("""
+                        SELECT is_admin 
+                        FROM users 
+                        WHERE username = 'admin'
+                    """)
+                    result = db.session.execute(sql_check).fetchone()
+                    
+                    if result:
+                        is_admin_sql = result[0]
+                        if is_admin_sql:
+                            print("✅ Администратор admin уже существует (по SQL запросу)")
+                        else:
+                            print("ℹ️ Пользователь admin найден, но не является администратором")
+                            # Пробуем обновить до администратора
+                            try:
+                                db.session.execute(text("""
+                                    UPDATE users 
+                                    SET is_admin = true 
+                                    WHERE username = 'admin'
+                                """))
+                                db.session.commit()
+                                print("✅ Пользователь admin обновлен до администратора!")
+                            except Exception as e2:
+                                print(f"⚠️ Не удалось обновить до администратора: {e2}")
+                    else:
+                        print("ℹ️ Не удалось проверить статус через SQL запрос")
+                except Exception as e2:
+                    print(f"⚠️ Не удалось проверить статус через SQL: {e2}")
+        
+        # Показываем список всех администраторов
+        print("\n📋 Список администраторов:")
+        try:
+            admins = User.query.filter_by(is_admin=True).all()
+            if admins:
+                for admin in admins:
+                    print(f"   • {admin.username} ({admin.email})")
+            else:
+                print("   Нет администраторов (по запросу через модель)")
+        except:
+            # Если не получается через модель, пробуем через SQL
+            try:
+                sql = text("""
+                    SELECT username, email 
+                    FROM users 
+                    WHERE is_admin = true 
+                    ORDER BY created_at
+                """)
+                result = db.session.execute(sql).fetchall()
+                if result:
+                    for admin in result:
+                        print(f"   • {admin[0]} ({admin[1]})")
+                else:
+                    print("   Нет администраторов (по запросу через SQL)")
+            except:
+                print("   Не удалось получить список администраторов")
     
     # Запуск потока очистки в фоне
     cleanup_thread = threading.Thread(target=cleanup_expired_pastes, daemon=True)
