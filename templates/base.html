@@ -1487,12 +1487,23 @@
 
                 <!-- Кнопки авторизации -->
                 <div class="d-flex align-items-center ms-3 gap-2">
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm auth-btn">
-                        <i class="fas fa-sign-in-alt me-2"></i>Вход
-                    </a>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm auth-btn">
-                        <i class="fas fa-user-plus me-2"></i>Регистрация
-                    </a>
+                    {% if current_user.logged_in %}
+                        <!-- Если пользователь авторизован -->
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-primary btn-sm auth-btn">
+                            <i class="fas fa-user me-2"></i>{{ current_user.username }}
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm auth-btn">
+                            <i class="fas fa-sign-out-alt me-2"></i>Выход
+                        </a>
+                    {% else %}
+                        <!-- Если не авторизован -->
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm auth-btn">
+                            <i class="fas fa-sign-in-alt me-2"></i>Вход
+                        </a>
+                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm auth-btn">
+                            <i class="fas fa-user-plus me-2"></i>Регистрация
+                        </a>
+                    {% endif %}
                     <div class="theme-toggle-wrapper ms-2">
                         <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
                             <div class="theme-toggle-slider">

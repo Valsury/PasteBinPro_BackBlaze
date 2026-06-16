@@ -87,12 +87,6 @@
                         </a>
                     </div>
                 </form>
-
-                <!-- Demo notice -->
-                <div class="alert alert-info mt-4" role="alert">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Демо-режим:</strong> Функция регистрации в разработке
-                </div>
             </div>
         </div>
     </div>
@@ -302,10 +296,8 @@ document.querySelector('.auth-form').addEventListener('submit', function(e) {
         return;
     }
 
-    // В демо-режиме просто показываем сообщение
-    alert('Демо-режим: регистрация в разработке.\n\nВаши данные:\nUsername: ' +
-          document.getElementById('username').value +
-          '\nEmail: ' + document.getElementById('email').value);
+    // Отправляем форму (теперь будет работать нормальная авторизация)
+    this.submit();
 });
 </script>
 {% endblock %}

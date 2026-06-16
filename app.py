@@ -30,6 +30,29 @@ storage = MinioStorage()
 # Инициализация AI-помощника
 ai_helper = OllamaHelper()
 
+# Импорт для хеширования паролей
+import hashlib
+import secrets
+import string
+
+# Функция для хеширования паролей
+def hash_password(password):
+    """Хеширует пароль с солью"""
+    salt = secrets.token_hex(16)
+    password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
+    return f"{salt}${password_hash}"
+
+def verify_password(password, hashed_password):
+    """Проверяет пароль"""
+    if not hashed_password or '$' not in hashed_password:
+        return False
+    salt, stored_hash = hashed_password.split('$', 1)
+    password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
+    return password_hash == stored_hash
+
+# Текущая сессия (упрощенная версия)
+current_user = {'logged_in': False, 'username': None, 'email': None}
+
 # Регистрируем фильтр nl2br для преобразования переносов строк в HTML
 @app.template_filter('nl2br')
 def nl2br_filter(text):
@@ -37,6 +60,11 @@ def nl2br_filter(text):
     if text is None:
         return ''
     return text.replace('\n', '<br>')
+
+# Контекстный процессор для передачи current_user в шаблоны
+@app.context_processor
+def inject_user():
+    return dict(current_user=current_user)
 
 def cleanup_expired_pastes():
     """Удаляет истекшие пасты из БД и MinIO"""
@@ -507,29 +535,38 @@ def recent_pastes():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Страница входа (пустышка)"""
+    """Страница входа"""
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        email_or_username = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
-        remember = request.form.get('remember') == 'on'
 
-        # В демо-режиме просто показываем сообщение
-        flash('🚧 Демо-режим: функция авторизации в разработке', 'info')
-        return redirect(url_for('login'))
+        # Ищем пользователя по email или username
+        from models import User
+        user = User.query.filter((User.email == email_or_username) | (User.username == email_or_username)).first()
+        
+        if user and verify_password(password, user.password_hash):
+            # Успешный вход
+            current_user['logged_in'] = True
+            current_user['username'] = user.username
+            current_user['email'] = user.email
+            flash(f'Добро пожаловать, {user.username}!', 'success')
+            return redirect(url_for('profile'))
+        else:
+            flash('Неверный логин или пароль', 'error')
+            return redirect(url_for('login'))
 
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """Страница регистрации (пустышка)"""
+    """Страница регистрации"""
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
         password_confirm = request.form.get('password_confirm', '').strip()
-        terms = request.form.get('terms') == 'on'
 
-        # Базовая валидация для красоты
+        # Валидация
         if not username or not email or not password:
             flash('Заполните все обязательные поля', 'error')
             return redirect(url_for('register'))
@@ -542,28 +579,57 @@ def register():
             flash('Пароль должен содержать минимум 8 символов', 'error')
             return redirect(url_for('register'))
 
-        if not terms:
-            flash('Необходимо согласиться с условиями использования', 'error')
+        # Проверка существующего пользователя
+        from models import User
+        existing_user = User.query.filter((User.email == email) | (User.username == username)).first()
+        if existing_user:
+            if existing_user.email == email:
+                flash('Пользователь с таким email уже существует', 'error')
+            else:
+                flash('Пользователь с таким именем уже существует', 'error')
             return redirect(url_for('register'))
 
-        # В демо-режиме просто показываем сообщение
-        flash('🚧 Демо-режим: функция регистрации в разработке', 'info')
-        flash(f'Ваши данные сохранены: {username} ({email})', 'success')
-        return redirect(url_for('login'))
+        # Создаем нового пользователя
+        try:
+            hashed_password = hash_password(password)
+            new_user = User(
+                username=username,
+                email=email,
+                password_hash=hashed_password,
+                is_active=True
+            )
+            
+            db.session.add(new_user)
+            db.session.commit()
+            
+            flash(f'Регистрация успешна! Теперь вы можете войти.', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Ошибка при регистрации пользователя: {e}")
+            flash('Ошибка при регистрации. Пожалуйста, попробуйте позже.', 'error')
+            return redirect(url_for('register'))
 
     return render_template('register.html')
 
 @app.route('/logout')
 def logout():
-    """Выход из системы (пустышка)"""
+    """Выход из системы"""
+    current_user['logged_in'] = False
+    current_user['username'] = None
+    current_user['email'] = None
     flash('Вы успешно вышли из системы', 'success')
     return redirect(url_for('index'))
 
 @app.route('/profile')
 def profile():
-    """Страница профиля пользователя (пустышка)"""
-    # В демо-режиме показываем шаблон профиля
-    return render_template('profile.html')
+    """Страница профиля пользователя"""
+    if not current_user['logged_in']:
+        flash('Необходимо войти в систему', 'error')
+        return redirect(url_for('login'))
+
+    return render_template('profile.html', user=current_user)
 
 @app.route('/ai')
 def ai_helper_page():
